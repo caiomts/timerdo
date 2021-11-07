@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta
 from typing import Optional
 
-from sqlmodel import SQLModel, create_engine, Field
+from sqlmodel import SQLModel, create_engine, Field, Relationship
 
 
 class ToDo(SQLModel, table=True):
@@ -18,6 +18,8 @@ class ToDo(SQLModel, table=True):
     tag: Optional[str] = None
     remarks: Optional[str] = None
 
+    timer: Optional['Timer'] = Relationship(back_populates='todo')
+
 
 class Timer(SQLModel, table=True):
     """SQL table and table instance for the timer schedule"""
@@ -26,6 +28,8 @@ class Timer(SQLModel, table=True):
     start: datetime = datetime.now()
     end: Optional[datetime] = None
     duration: Optional[timedelta] = None
+
+    todo: ToDo = Relationship(back_populates='timer')
 
 
 sqlite_file_name = 'database.db'

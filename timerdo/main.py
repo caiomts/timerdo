@@ -27,21 +27,22 @@ def add(task: str, project: str = None, due_date: datetime = None,
                                fg=typer.colors.RED))
         raise typer.Exit(code=1)
 
-    if due_date is not None:
-        if due_date < datetime.now():
-            typer.secho(f'due date must be grater than {datetime.now()}',
-                        fg=typer.colors.RED)
-            raise typer.Exit(code=1)
+    today = datetime.today()
 
-    if reminder is not None:
-        if reminder < datetime.now():
-            typer.secho(f'reminder must be grater than {datetime.now()}',
-                        fg=typer.colors.RED)
-        if due_date is not None:
-            if reminder > due_date:
-                typer.secho(f'reminder must be smaller than {due_date}',
-                            fg=typer.colors.RED)
-            raise typer.Exit(code=1)
+    if due_date is not None and due_date <= today:
+        typer.secho(f'due date must be grater than {today.date()}',
+                    fg=typer.colors.RED)
+        raise typer.Exit(code=1)
+
+    if reminder is not None and reminder <= today:
+        typer.secho(f'reminder must be grater than {today.date()}',
+                    fg=typer.colors.RED)
+        raise typer.Exit(code=1)
+
+    if due_date is not None and reminder is not None and reminder >= due_date:
+        typer.secho(f'reminder must be smaller than {due_date.date()}',
+                    fg=typer.colors.RED)
+        raise typer.Exit(code=1)
 
     new_entry = ToDo(task=task, project=project, due_date=due_date,
                      reminder=reminder, status=status, tag=tag)
@@ -56,7 +57,7 @@ def start(task_id: int):
     with Session(engine) as session:
         try:
             session.exec(select(Timer).where(Timer.end == None)).one()
-            typer.secho(f'The Timer must be stopped first',
+            typer.secho('The Timer must be stopped first',
                         fg=typer.colors.RED)
             raise typer.Exit(code=1)
         except NoResultFound:
@@ -118,6 +119,7 @@ def stop(remarks: str = None):
 
         except NoResultFound:
             typer.secho(f'No task running', fg=typer.colors.RED)
+            raise typer.Exit(code=1)
 
 
 def view():
