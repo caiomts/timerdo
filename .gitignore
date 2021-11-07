@@ -1,0 +1,4 @@
+.pytest_cache/
+database.db
+__pycache__/
+.idea
