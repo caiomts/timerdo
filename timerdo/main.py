@@ -1,12 +1,11 @@
 from sqlmodel import Session, create_engine, select
 import typer
-from .build_db import ToDo, Timer
+from timerdo.build_db import ToDo, Timer, sqlite_file_name
 from datetime import datetime, timedelta
 from sqlalchemy.exc import NoResultFound
 
 app = typer.Typer()
 
-sqlite_file_name = 'database.db'
 sqlite_url = f'sqlite:///{sqlite_file_name}'
 
 engine = create_engine(sqlite_url, echo=False)
@@ -15,11 +14,11 @@ engine = create_engine(sqlite_url, echo=False)
 @app.command()
 def add(task: str, project: str = None, due_date: datetime = None,
         reminder: datetime = None,
-        status: str = typer.Option('to do', help='[to do|doing|done]'),
+        status: str = typer.Option('to do', help='[to do|doing]'),
         tag: str = None):
     """Add task to the to-do list."""
-    if status not in ['to do', 'doing', 'done']:
-        typer.echo(typer.style('status must be "to do", "doing" or "done"',
+    if status not in ['to do', 'doing']:
+        typer.echo(typer.style('status must be "to do" or "doing"',
                                fg=typer.colors.RED))
         raise typer.Exit(code=1)
 
@@ -106,7 +105,7 @@ def stop(remarks: str = None):
             else:
                 if check:
                     query.status = 'done'
-                    query.data_end = query_timer.end
+                    query.data_end = query_timer.end.date()
                 if remarks:
                     query.remarks = remarks
 
