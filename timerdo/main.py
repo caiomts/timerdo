@@ -1,6 +1,6 @@
 from sqlmodel import Session, create_engine, select
 import typer
-from timerdo.build_db import ToDo, Timer, sqlite_file_name
+from build_db import ToDo, Timer, sqlite_file_name
 from datetime import datetime, timedelta
 from sqlalchemy.exc import NoResultFound
 
