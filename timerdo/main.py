@@ -1,10 +1,6 @@
-import sys
-
-sys.path.append('../')
-
 from sqlmodel import Session, create_engine, select
 import typer
-from timerdo.build_db import ToDo, Timer
+from .build_db import ToDo, Timer
 from datetime import datetime, timedelta
 from sqlalchemy.exc import NoResultFound
 

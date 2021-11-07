@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 from typing import Optional
 
 from sqlmodel import SQLModel, create_engine, Field, Relationship
@@ -7,8 +7,8 @@ from sqlmodel import SQLModel, create_engine, Field, Relationship
 class ToDo(SQLModel, table=True):
     """SQL table and table instance for the 'to do' list"""
     id: Optional[int] = Field(default=None, primary_key=True)
-    date_int: datetime = datetime.now()
-    data_end: Optional[datetime] = None
+    date_int: date = date.today()
+    data_end: Optional[date] = None
     project: Optional[str] = None
     task: str
     due_date: Optional[datetime] = None
@@ -32,7 +32,7 @@ class Timer(SQLModel, table=True):
     todo: ToDo = Relationship(back_populates='timer')
 
 
-sqlite_file_name = 'database.db'
+sqlite_file_name = 'test/database.db'
 sqlite_url = f'sqlite:///{sqlite_file_name}'
 
 engine = create_engine(sqlite_url, echo=True)
