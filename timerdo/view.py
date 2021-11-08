@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 
 from timerdo.build_db import ToDo
+from typing import Engine
 
 
 @dataclass
@@ -13,6 +14,8 @@ class View:
     simple_task: ToDo = ''
 
     reminders: ToDo = ''
+
+    engine: Union[Engine, Engine]
 
     def load_view(self ,engine):
 

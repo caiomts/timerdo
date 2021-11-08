@@ -4,11 +4,11 @@ with open("README.md", "r", encoding="utf-8") as fh:
     long_description = fh.read()
 
 setuptools.setup(
-    name="example-pkg-YOUR-USERNAME-HERE",
+    name="timerdo",
     version="0.0.1",
-    author="Example Author",
-    author_email="author@example.com",
-    description="A small example package",
+    author="Caio Mescouto",
+    author_email="caiomescouto@gmail.com",
+    description="A minimalist to-do list with a built-in timer",
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/pypa/sampleproject",
@@ -22,5 +22,5 @@ setuptools.setup(
     ],
     package_dir={"": "src"},
     packages=setuptools.find_packages(where="src"),
-    python_requires=">=3.6",
+    python_requires=">=3.9",
 )
