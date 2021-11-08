@@ -8,7 +8,7 @@ from sqlmodel import create_engine, Session, select
 from datetime import datetime, timedelta
 
 try:
-    os.remove('./test/test_db.db')
+    os.remove('./test/timerdo_db.db')
 except FileNotFoundError:
     pass
 
@@ -18,10 +18,6 @@ sqlite_url = f'sqlite:///{sqlite_file_name}'
 engine = create_engine(sqlite_url, echo=True)
 
 runner = CliRunner()
-
-
-def test_set_db():
-    result = runner.invoke(_n)
 
 
 def test_add_none():
