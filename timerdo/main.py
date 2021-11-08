@@ -1,12 +1,21 @@
-from sqlmodel import Session, create_engine, select
-import typer
-from .build_db import ToDo, Timer, create_db_and_tables
+import os
 from datetime import datetime, timedelta
+from pathlib import Path
+
+import typer
 from sqlalchemy.exc import NoResultFound, OperationalError
+from sqlmodel import Session, create_engine, select
+
+from .build_db import ToDo, Timer, create_db_and_tables
 
 app = typer.Typer()
 
-sqlite_file_name = './test/timerdo_db.db'
+APP_NAME = 'timerdo'
+app_dir = typer.get_app_dir(APP_NAME)
+app_dir_path = Path(app_dir)
+app_dir_path.mkdir(parents=True, exist_ok=True)
+
+sqlite_file_name = os.path.join(app_dir, 'timerdo_db.db')
 
 sqlite_url = f'sqlite:///{sqlite_file_name}'
 

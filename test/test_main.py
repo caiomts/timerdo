@@ -8,7 +8,8 @@ from sqlmodel import create_engine, Session, select
 from datetime import datetime, timedelta
 
 try:
-    os.remove('./test/timerdo_db.db')
+    os.rename('/home/cmts/.config/timerdo/timerdo_db.db',
+              '/home/cmts/.config/timerdo/timerdo_db_moved.db')
 except FileNotFoundError:
     pass
 
@@ -165,5 +166,10 @@ def test_duration():
         assert todo is not None and todo == timer
 
 
-
-
+def test_return_db():
+    try:
+        os.remove('/home/cmts/.config/timerdo/timerdo_db.db')
+        os.rename('/home/cmts/.config/timerdo/timerdo_db_moved.db',
+                  '/home/cmts/.config/timerdo/timerdo_db.db')
+    except FileNotFoundError:
+        pass
