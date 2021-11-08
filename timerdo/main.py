@@ -1,10 +1,12 @@
 from sqlmodel import Session, create_engine, select
 import typer
-from build_db import ToDo, Timer, sqlite_file_name
+from .build_db import ToDo, Timer, create_db_and_tables
 from datetime import datetime, timedelta
-from sqlalchemy.exc import NoResultFound
+from sqlalchemy.exc import NoResultFound, OperationalError
 
 app = typer.Typer()
+
+sqlite_file_name = './test/timerdo_db.db'
 
 sqlite_url = f'sqlite:///{sqlite_file_name}'
 
@@ -17,33 +19,38 @@ def add(task: str, project: str = None, due_date: datetime = None,
         status: str = typer.Option('to do', help='[to do|doing]'),
         tag: str = None):
     """Add task to the to-do list."""
-    if status not in ['to do', 'doing']:
-        typer.echo(typer.style('status must be "to do" or "doing"',
-                               fg=typer.colors.RED))
-        raise typer.Exit(code=1)
+    try:
+        if status not in ['to do', 'doing']:
+            typer.echo(typer.style('status must be "to do" or "doing"',
+                                   fg=typer.colors.RED))
+            raise typer.Exit(code=1)
 
-    today = datetime.today()
+        today = datetime.today()
 
-    if due_date is not None and due_date <= today:
-        typer.secho(f'due date must be grater than {today.date()}',
-                    fg=typer.colors.RED)
-        raise typer.Exit(code=1)
+        if due_date is not None and due_date <= today:
+            typer.secho(f'due date must be grater than {today.date()}',
+                        fg=typer.colors.RED)
+            raise typer.Exit(code=1)
 
-    if reminder is not None and reminder <= today:
-        typer.secho(f'reminder must be grater than {today.date()}',
-                    fg=typer.colors.RED)
-        raise typer.Exit(code=1)
+        if reminder is not None and reminder <= today:
+            typer.secho(f'reminder must be grater than {today.date()}',
+                        fg=typer.colors.RED)
+            raise typer.Exit(code=1)
 
-    if due_date is not None and reminder is not None and reminder >= due_date:
-        typer.secho(f'reminder must be smaller than {due_date.date()}',
-                    fg=typer.colors.RED)
-        raise typer.Exit(code=1)
+        if due_date is not None and reminder is not None and reminder >= due_date:
+            typer.secho(f'reminder must be smaller than {due_date.date()}',
+                        fg=typer.colors.RED)
+            raise typer.Exit(code=1)
 
-    new_entry = ToDo(task=task, project=project, due_date=due_date,
-                     reminder=reminder, status=status, tag=tag)
-    with Session(engine) as session:
-        session.add(new_entry)
-        session.commit()
+        new_entry = ToDo(task=task, project=project, due_date=due_date,
+                         reminder=reminder, status=status, tag=tag)
+        with Session(engine) as session:
+            session.add(new_entry)
+            session.commit()
+    except OperationalError:
+        create_db_and_tables(engine)
+        add(task=task, project=project, due_date=due_date, reminder=reminder,
+            status=status, tag=tag)
 
 
 @app.command()
@@ -139,7 +146,3 @@ def edit_timer():
 
 def edit():
     ...
-
-
-if __name__ == "__main__":
-    app()

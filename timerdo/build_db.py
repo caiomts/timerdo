@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta, date
 from typing import Optional
 
-from sqlmodel import SQLModel, create_engine, Field, Relationship
+from sqlmodel import SQLModel, Field, Relationship
 
 
 class ToDo(SQLModel, table=True):
@@ -32,19 +32,5 @@ class Timer(SQLModel, table=True):
     todo: ToDo = Relationship(back_populates='timer')
 
 
-sqlite_file_name = 'test/database.db'
-sqlite_url = f'sqlite:///{sqlite_file_name}'
-
-engine = create_engine(sqlite_url, echo=True)
-
-
-def create_db_and_tables():
+def create_db_and_tables(engine):
     SQLModel.metadata.create_all(engine)
-
-
-def main():
-    create_db_and_tables()
-
-
-if __name__ == '__main__':
-    main()

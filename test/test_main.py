@@ -1,16 +1,18 @@
 from typer.testing import CliRunner
-import sys
 
-sys.path.append('../')
-
-from timerdo.main import app
-from timerdo.build_db import ToDo, Timer, create_db_and_tables
-from sqlmodel import create_engine, Session, select
 import os
-from datetime import  datetime, timedelta
+
+from timerdo.main import app, sqlite_file_name
+from timerdo.build_db import ToDo, Timer
+from sqlmodel import create_engine, Session, select
+from datetime import datetime, timedelta
+
+try:
+    os.remove('./test/test_db.db')
+except FileNotFoundError:
+    pass
 
 
-sqlite_file_name = 'database.db'
 sqlite_url = f'sqlite:///{sqlite_file_name}'
 
 engine = create_engine(sqlite_url, echo=True)
@@ -18,18 +20,8 @@ engine = create_engine(sqlite_url, echo=True)
 runner = CliRunner()
 
 
-def test_create_db():
-    """Test create_db_and_tables"""
-    os.remove(sqlite_file_name)
-    result = create_db_and_tables()
-    assert result is None
-
-    with Session(engine) as session:
-        query = session.exec(select(ToDo)).all()
-        assert query is not None
-
-        query = session.exec(select(Timer)).all()
-        assert query is not None
+def test_set_db():
+    result = runner.invoke(_n)
 
 
 def test_add_none():
@@ -60,7 +52,7 @@ def test_add_status():
     result = runner.invoke(app, ['add', task, '--status', status])
 
     assert result.exit_code == 1
-    assert 'status must be "to do", "doing" or "done"' in result.stdout
+    assert 'status must be "to do" or "doing"\n' in result.stdout
 
 
 def test_add_due_date():
@@ -108,7 +100,7 @@ def test_add_full_entry():
         datetime.now() + timedelta(days=2), '%Y-%m-%d')
     reminder = datetime.strftime(
         datetime.now() + timedelta(days=1), '%Y-%m-%d')
-    status = 'done'
+    status = 'doing'
     tag = 'tag'
 
     result = runner.invoke(app, ['add', task,
@@ -126,14 +118,6 @@ def test_add_full_entry():
                                                 ToDo.status == status,
                                                 ToDo.tag == tag)).one()
         assert query is not None
-
-
-def test_start_done():
-    """Test when done"""
-    todo_id = '2'
-    result = runner.invoke(app, ['start', todo_id])
-
-    assert result.exit_code == 1
 
 
 def test_start():
