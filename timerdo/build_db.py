@@ -1,7 +1,36 @@
 from datetime import datetime, timedelta, date
-from typing import Optional
+from typing import Optional, List
 
 from sqlmodel import SQLModel, Field, Relationship
+import numpy as np
+
+
+class Project(SQLModel, table=True):
+    """SQL table and table instances for projects"""
+    id: Optional[int] = Field(default=None, primary_key=True)
+    name: str
+
+    tasks: List['ToDo'] = Relationship(back_populates='project')
+
+    timers: Optional[List['Timer']] = Relationship(back_populates='project')
+
+    duration: Optional[timedelta] = np.max(timers) - np.min(timers)
+
+
+class DueDate(SQLModel, table=True):
+    """Due dates table"""
+    id: Optional[int] = Field(default=None, primary_key=True)
+    due_date: date
+
+    tasks: List['ToDo'] = Relationship(back_populates='due_date')
+
+
+class Reminder(SQLModel, table=True):
+    """Reminder"""
+    id: Optional[int] = Field(default=None, primary_key=True)
+    reminder: date
+
+    tasks: List['ToDo'] = Relationship(back_populates='reminder')
 
 
 class ToDo(SQLModel, table=True):
@@ -9,16 +38,23 @@ class ToDo(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     date_int: date = date.today()
     data_end: Optional[date] = None
-    project: Optional[str] = None
     task: str
-    due_date: Optional[datetime] = None
-    reminder: Optional[datetime] = None
-    duration: Optional[timedelta] = None
     status: str
     tag: Optional[str] = None
     remarks: Optional[str] = None
 
-    timer: Optional['Timer'] = Relationship(back_populates='todo')
+    project_id: Optional[int] = Field(foreign_key='project.id')
+    project: Optional[Project] = Relationship(back_populates='tasks')
+
+    due_date_id: Optional[int] = Field(foreign_key='duedate.id')
+    due_date: Optional[DueDate] = Relationship(back_populates='tasks')
+
+    reminder_id: Optional[int] = Field(foreign_key='reminder.id')
+    reminder: Optional[Reminder] = Relationship(back_populates='tasks')
+
+    timers: Optional[list['Timer']] = Relationship(back_populates='task')
+
+    duration: Optional[timedelta] = np.max(timers) - np.min(timers)
 
 
 class Timer(SQLModel, table=True):
@@ -29,7 +65,9 @@ class Timer(SQLModel, table=True):
     end: Optional[datetime] = None
     duration: Optional[timedelta] = None
 
-    todo: ToDo = Relationship(back_populates='timer')
+    task: ToDo = Relationship(back_populates='timers')
+
+    project: Optional[Project] = Relationship(back_populates='timers')
 
 
 def create_db_and_tables(engine):

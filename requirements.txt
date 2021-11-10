@@ -14,3 +14,7 @@ sqlmodel==0.0.4
 tomli==1.2.2
 typer==0.4.0
 typing-extensions==3.10.0.2
+
+timerdo~=0.0.1
+numpy~=1.21.4
+setuptools~=58.0.4
