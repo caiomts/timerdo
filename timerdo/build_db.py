@@ -14,7 +14,7 @@ class Project(SQLModel, table=True):
 
     timers: Optional[List['Timer']] = Relationship(back_populates='project')
 
-    duration: Optional[timedelta] = np.max(timers) - np.min(timers)
+    duration: Optional[timedelta] = None
 
 
 class DueDate(SQLModel, table=True):
@@ -52,9 +52,9 @@ class ToDo(SQLModel, table=True):
     reminder_id: Optional[int] = Field(foreign_key='reminder.id')
     reminder: Optional[Reminder] = Relationship(back_populates='tasks')
 
-    timers: Optional[list['Timer']] = Relationship(back_populates='task')
+    timers: Optional[List['Timer']] = Relationship(back_populates='task')
 
-    duration: Optional[timedelta] = np.max(timers) - np.min(timers)
+    duration: Optional[timedelta] = None
 
 
 class Timer(SQLModel, table=True):
