@@ -1,12 +1,12 @@
 import os
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 from pathlib import Path
 
 import typer
 from sqlalchemy.exc import NoResultFound, OperationalError
 from sqlmodel import Session, create_engine, select
 
-from .build_db import ToDo, Timer, create_db_and_tables
+from .build_db import Project, ToDo, Timer, create_db_and_tables
 
 app = typer.Typer()
 
@@ -34,26 +34,38 @@ def add(task: str, project: str = None, due_date: datetime = None,
                                    fg=typer.colors.RED))
             raise typer.Exit(code=1)
 
-        today = datetime.today()
+        today = date.today()
 
         if due_date is not None and due_date <= today:
-            typer.secho(f'due date must be grater than {today.date()}',
+            typer.secho(f'due date must be grater than {today}',
                         fg=typer.colors.RED)
             raise typer.Exit(code=1)
 
         if reminder is not None and reminder <= today:
-            typer.secho(f'reminder must be grater than {today.date()}',
+            typer.secho(f'reminder must be grater than {today}',
                         fg=typer.colors.RED)
             raise typer.Exit(code=1)
 
-        if due_date is not None and reminder is not None and reminder >= due_date:
+        if due_date is not None and reminder is not None and \
+                reminder >= due_date:
             typer.secho(f'reminder must be smaller than {due_date.date()}',
                         fg=typer.colors.RED)
             raise typer.Exit(code=1)
 
-        new_entry = ToDo(task=task, project=project, due_date=due_date,
-                         reminder=reminder, status=status, tag=tag)
         with Session(engine) as session:
+            if project is not None:
+                if session.exec(select(
+                        Project).where(Project.name ==
+                                       project)).one_or_none() is None:
+                    project = Project(name=project, date_init=date.today())
+                else:
+                    project = session.exec(select(
+                        Project).where(Project.name ==
+                                       project)).one()
+
+            new_entry = ToDo(task=task, project=project,
+                             due_date=due_date, reminder=reminder,
+                             status=status, tag=tag)
             session.add(new_entry)
             session.commit()
     except OperationalError:
