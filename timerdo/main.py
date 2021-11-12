@@ -97,7 +97,7 @@ def start(task_id: int, end: datetime = typer.Option(None,
                     session.add(query)
                 session.add(Timer(id_todo=task_id))
                 session.commit()
-                if end is not None:
+                if end is not None and end > datetime.now():
                     total_seconds = int(
                         (end - datetime.now()).total_seconds())
                     with typer.progressbar(length=total_seconds) as progress:
@@ -105,10 +105,20 @@ def start(task_id: int, end: datetime = typer.Option(None,
                             time.sleep(1)
                             progress.update(1)
                         else:
-                            typer.secho('\nYou Time is over! Well done!\n',
+                            typer.secho('\n\nYou Time is over! Well done!\n',
                                         blink=True,
                                         fg=typer.colors.BRIGHT_GREEN)
-                            stop()
+                            remark = typer.confirm("Any remark?")
+                            if remark:
+                                remark = typer.prompt('Enter your remarks.')
+                            else:
+                                remark = None
+                            stop(remarks=remark)
+                else:
+                    typer.secho(
+                        f'\nEnd must be grater than {datetime.now()}\n',
+                        fg=typer.colors.RED)
+                    raise typer.Exit(code=1)
             else:
                 typer.secho(f'\nTask already done\n',
                             fg=typer.colors.RED)
@@ -159,7 +169,7 @@ def view(due_date: datetime = typer.Option(None, formats=['%Y-%m-%d'])):
     overdue = select(ToDo).where(ToDo.due_date < date.today(),
                                  ToDo.status != 'done').order_by(ToDo.due_date)
 
-    reminders = select(ToDo).where(ToDo.reminder == date.today(),
+    reminders = select(ToDo).where(ToDo.reminder <= date.today(),
                                    ToDo.status != 'done').order_by(
         ToDo.due_date)
 
