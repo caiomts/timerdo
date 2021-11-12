@@ -1,12 +1,15 @@
 import os
+import time
 from datetime import datetime, timedelta, date
 from pathlib import Path
 
 import typer
 from sqlalchemy.exc import NoResultFound, OperationalError
-from sqlmodel import Session, create_engine, select
+from sqlmodel import Session, create_engine, select, or_
+from tabulate import tabulate
 
-from .build_db import Project, ToDo, Timer, create_db_and_tables
+from .database import ToDo, Timer, create_db_and_tables
+from .functions_aux import round_timedelta, Status, make_table_view
 
 app = typer.Typer()
 
@@ -23,45 +26,43 @@ engine = create_engine(sqlite_url, echo=False)
 
 
 @app.command()
-def add(task: str, project: str = None, due_date: datetime = None,
-        reminder: datetime = None,
-        status: str = typer.Option('to do', help='[to do|doing]'),
+def add(task: str, project: str = None, due_date: datetime = typer.Option(
+    None, formats=['%Y-%m-%d']), reminder: datetime = typer.Option(
+    None, formats=['%Y-%m-%d']),
+        status: Status = typer.Option(Status.to_do),
         tag: str = None):
     """Add task to the to-do list."""
     try:
-        if status not in ['to do', 'doing']:
-            typer.echo(typer.style('status must be "to do" or "doing"',
-                                   fg=typer.colors.RED))
-            raise typer.Exit(code=1)
-
-        today = date.today()
+        today = datetime.today()
 
         if due_date is not None and due_date <= today:
-            typer.secho(f'due date must be grater than {today}',
+            typer.secho(f'\ndue date must be grater than {today.date()}\n',
                         fg=typer.colors.RED)
             raise typer.Exit(code=1)
 
         if reminder is not None and reminder <= today:
-            typer.secho(f'reminder must be grater than {today}',
+            typer.secho(f'\nreminder must be grater than {today.date()}\n',
                         fg=typer.colors.RED)
             raise typer.Exit(code=1)
 
         if due_date is not None and reminder is not None and \
                 reminder >= due_date:
-            typer.secho(f'reminder must be smaller than {due_date.date()}',
+            typer.secho(f'\nreminder must be smaller than {due_date.date()}\n',
                         fg=typer.colors.RED)
             raise typer.Exit(code=1)
 
         with Session(engine) as session:
             if project is not None:
-                if session.exec(select(
-                        Project).where(Project.name ==
-                                       project)).one_or_none() is None:
-                    project = Project(name=project, date_init=date.today())
-                else:
-                    project = session.exec(select(
-                        Project).where(Project.name ==
-                                       project)).one()
+                new_project = session.exec(select(ToDo).where(
+                    ToDo.project == project)).first()
+                if new_project is not None:
+                    ongoing_project = session.exec(select(ToDo).where(
+                        ToDo.project == project,
+                        ToDo.status != 'done')).first()
+                    if ongoing_project is None:
+                        typer.secho(f'\nTasks already done in the project\n',
+                                    fg=typer.colors.RED)
+                        raise typer.Exit(code=1)
 
             new_entry = ToDo(task=task, project=project,
                              due_date=due_date, reminder=reminder,
@@ -75,12 +76,14 @@ def add(task: str, project: str = None, due_date: datetime = None,
 
 
 @app.command()
-def start(task_id: int):
-    """Start Timer for a given open task (status equal "to do" or "doing")."""
+def start(task_id: int, end: datetime = typer.Option(None,
+                                                     formats=
+                                                     ['%Y-%m-%d %H:%M:%S'])):
+    """Start Timer for a given open task."""
     with Session(engine) as session:
         try:
             session.exec(select(Timer).where(Timer.end == None)).one()
-            typer.secho('The Timer must be stopped first',
+            typer.secho('\nThe Timer must be stopped first\n',
                         fg=typer.colors.RED)
             raise typer.Exit(code=1)
         except NoResultFound:
@@ -94,13 +97,25 @@ def start(task_id: int):
                     session.add(query)
                 session.add(Timer(id_todo=task_id))
                 session.commit()
+                if end is not None:
+                    total_seconds = int(
+                        (end - datetime.now()).total_seconds())
+                    with typer.progressbar(length=total_seconds) as progress:
+                        while datetime.now() < end:
+                            time.sleep(1)
+                            progress.update(1)
+                        else:
+                            typer.secho('\nYou Time is over! Well done!\n',
+                                        blink=True,
+                                        fg=typer.colors.BRIGHT_GREEN)
+                            stop()
             else:
-                typer.secho(f'Task already done',
+                typer.secho(f'\nTask already done\n',
                             fg=typer.colors.RED)
                 raise typer.Exit(code=1)
 
         except NoResultFound:
-            typer.secho(f'Invalid task id',
+            typer.secho(f'\nInvalid task id\n',
                         fg=typer.colors.RED)
             raise typer.Exit(code=1)
 
@@ -116,15 +131,8 @@ def stop(remarks: str = None):
             query_timer.duration = query_timer.end - query_timer.start
             session.add(query_timer)
 
-            query_duration = session.exec(
-                select(Timer.duration).where(
-                    Timer.id_todo == query_timer.id_todo)
-            ).all()
-
             query = session.exec(
                 select(ToDo).where(ToDo.id == query_timer.id_todo)).one()
-
-            query.duration = sum(query_duration, timedelta(0))
 
             check = typer.confirm('Is the task done?')
 
@@ -145,8 +153,48 @@ def stop(remarks: str = None):
             raise typer.Exit(code=1)
 
 
-def view():
-    ...
+@app.command()
+def view(due_date: datetime = typer.Option(None, formats=['%Y-%m-%d'])):
+    """View to-do list"""
+    overdue = select(ToDo).where(ToDo.due_date < date.today(),
+                                 ToDo.status != 'done').order_by(ToDo.due_date)
+
+    reminders = select(ToDo).where(ToDo.reminder == date.today(),
+                                   ToDo.status != 'done').order_by(
+        ToDo.due_date)
+
+    if due_date is None:
+        due_date = date.today() + timedelta(weeks=1)
+
+    due_in = select(ToDo).where(
+        ToDo.due_date < due_date, ToDo.due_date >= date.today(),
+        ToDo.status != 'done').order_by(ToDo.due_date)
+
+    no_due = select(ToDo).where(
+        ToDo.due_date == None, ToDo.status != 'done',
+        ToDo.reminder == None).order_by(ToDo.date_init)
+
+    if len(make_table_view(engine, overdue)) > 1:
+        typer.secho(f'\nOVERDUE\n', fg=typer.colors.BRIGHT_RED,
+                    bold=True)
+        typer.secho(tabulate(make_table_view(engine, overdue),
+                             headers="firstrow"), fg=typer.colors.BRIGHT_WHITE)
+
+    if len(make_table_view(engine, reminders)) > 1:
+        typer.secho(f'\nREMINDERS\n', fg=typer.colors.BRIGHT_YELLOW, bold=True)
+        typer.secho(tabulate(make_table_view(engine, reminders),
+                             headers="firstrow"), fg=typer.colors.BRIGHT_WHITE)
+
+    if len(make_table_view(engine, due_in)) > 1:
+        typer.secho(f'\nDUE IN\n', fg=typer.colors.BRIGHT_GREEN, bold=True)
+        typer.secho(tabulate(make_table_view(engine, due_in),
+                             headers="firstrow"), fg=typer.colors.BRIGHT_WHITE)
+
+    if len(make_table_view(engine, no_due)) > 1:
+        typer.secho(f'\nNO DUE\n', fg=typer.colors.BRIGHT_BLUE, bold=True)
+        typer.secho(tabulate(make_table_view(engine, no_due),
+                             headers="firstrow"), fg=typer.colors.BRIGHT_WHITE)
+    print('\n')
 
 
 def report():
