@@ -20,7 +20,7 @@ def projects(init: datetime = typer.Option(
     None, '--project', '-p', help='Flag more than one.'),
         done: bool = typer.Option(False, '--done', '-d',
                                   help='Flag to see done tasks.')):
-    """Print Projects report"""
+    """Print Projects report."""
     if not project:
         project = ToDo.project != None
     else:
@@ -62,7 +62,7 @@ def tags(init: datetime = typer.Option(datetime.today() - timedelta(weeks=2),
                                                  help='Flag more than one.'),
          done: bool = typer.Option(False, '--done', '-d',
                                    help='Flag to see done tasks.')):
-    """Print tasks per tag"""
+    """Print tasks per tag."""
     if not tag:
         tag = ToDo.tag != None
     else:
@@ -94,7 +94,7 @@ def tags(init: datetime = typer.Option(datetime.today() - timedelta(weeks=2),
 @app.command()
 def log(init: datetime = typer.Option(datetime.today() - timedelta(weeks=4),
                                       '--init', '-i', formats=['%Y-%m-%d'])):
-    """Print to-do list"""
+    """Print to-do list."""
     query = select(ToDo).where(ToDo.date_init >= init)
     table = make_table_view(engine, query)
     typer.secho(f'\nTASKS FROM {init.date()} TILL NOW\n',
@@ -106,7 +106,7 @@ def log(init: datetime = typer.Option(datetime.today() - timedelta(weeks=4),
 
 @app.command()
 def task(id: int):
-    """Print one task"""
+    """Print one task."""
     try:
         query = select(ToDo).where(ToDo.id == id)
         for i in list_query(engine, query):

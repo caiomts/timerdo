@@ -3,16 +3,18 @@ from datetime import datetime, timedelta, date
 
 import typer
 from sqlalchemy.exc import NoResultFound, OperationalError
-from sqlmodel import Session, select, col, func
+from sqlmodel import Session, select, func
 from tabulate import tabulate
 
+from . import edit
 from . import reports
 from .database import create_db_and_tables, engine
 from .functions_aux import Status, make_table_view, pop_up_msg
 from .tables import ToDo, Timer
 
 app = typer.Typer()
-app.add_typer(reports.app, name='report', help='Print customized reports')
+app.add_typer(reports.app, name='report', help='Print customized reports.')
+app.add_typer(edit.app, name='edit', help='Edit records.')
 
 
 @app.command()
@@ -63,7 +65,7 @@ def add(task: str, project: str = typer.Option(None, '--project', '-p'),
             session.commit()
 
             new_id = session.exec(select(func.max(ToDo.id))).one()
-            typer.secho(f'Add \n{task}. Task id: {new_id}\n',
+            typer.secho(f'Add {task}. Task id: {new_id}\n',
                         fg=typer.colors.GREEN)
     except OperationalError:
         create_db_and_tables()
@@ -184,7 +186,7 @@ def stop(remarks: str = typer.Option(None, '--remarks', '-r')):
 def view(due_date: datetime = typer.Option(datetime.today() +
                                            timedelta(weeks=1),
                                            formats=['%Y-%m-%d'])):
-    """Print to-do list view"""
+    """Print to-do list view."""
     overdue = select(ToDo).where(ToDo.due_date < date.today(),
                                  ToDo.status != 'done').order_by(ToDo.due_date)
 

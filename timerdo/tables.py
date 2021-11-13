@@ -8,7 +8,7 @@ class ToDo(SQLModel, table=True):
     """SQL table and table instance for the 'to do' list"""
     id: Optional[int] = Field(default=None, primary_key=True)
     date_init: date = date.today()
-    date_end: Optional[date] = None # date!
+    date_end: Optional[date] = None
     task: str
     status: str
     tag: Optional[str] = None
