@@ -3,7 +3,7 @@ from typer.testing import CliRunner
 import os
 
 from timerdo.main import app, sqlite_file_name
-from timerdo.database import ToDo, Timer
+from timerdo.tables import ToDo, Timer
 from sqlmodel import create_engine, Session, select
 from datetime import datetime, timedelta
 

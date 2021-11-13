@@ -1,6 +1,8 @@
 from datetime import timedelta
-import typer
 from enum import Enum
+from tkinter import *
+from tkinter import ttk
+
 from sqlmodel import Session
 
 
@@ -21,6 +23,7 @@ def round_timedelta(delta: timedelta):
         hours = 0
     if seconds >= 60:
         minutes = round(seconds/60)
+        seconds += - minutes * 60
     else:
         minutes = 0
     if hours < 10:
@@ -40,22 +43,47 @@ def list_query(engine, query):
             duration = timedelta()
             for dur in task.timers:
                 duration += dur.duration
-
-    return query_list, duration
+            yield task, duration
 
 
 def make_table_view(engine, tasks):
-    table = [['id', 'Task', 'Project', 'Status', 'Tag', 'hh:mm', 'Due in']]
+    table = [['id', 'Task', 'Project', 'Status', 'Tag', 'Remarks', 'hh:mm',
+              'Due in']]
     try:
-        tasks, duration_ = list_query(engine, tasks)
-        for task in tasks:
+        for i in list_query(engine, tasks):
+            task = i[0]
+            duration = i[1]
             table.append(
                 [task.id, task.task, task.project, task.status, task.tag,
-                 round_timedelta(duration_), task.due_date])
+                 task.remarks, round_timedelta(duration), task.due_date])
     except UnboundLocalError:
         pass
-
     return table
 
+
+def pop_up_msg():
+    """Pop up finish msg"""
+    root = Tk()
+    frm = ttk.Frame(root, padding=10)
+    frm.grid()
+    ttk.Label(frm, text="Your Time is Over! Well done!").grid(column=0, row=0)
+    ttk.Button(frm, text="Quit", command=root.destroy).grid(column=1, row=0)
+    root.mainloop()
+
+
+def make_table_projects(engine, tasks):
+    table = [['id', 'Task', 'Status', 'Tag', 'hh:mm', 'Due in']]
+    try:
+        project_duration = timedelta()
+        for i in list_query(engine, tasks):
+            task = i[0]
+            duration = i[1]
+            project_duration += duration
+            table.append(
+                [task.id, task.task, task.status, task.tag,
+                 round_timedelta(duration), task.due_date])
+    except UnboundLocalError:
+        pass
+    return table, round_timedelta(project_duration)
 
 

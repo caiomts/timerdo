@@ -1,36 +1,20 @@
-from datetime import datetime, timedelta, date
-from typing import Optional, List
+import os
+from pathlib import Path
 
-from sqlmodel import SQLModel, Field, Relationship
+import typer
+from sqlmodel import SQLModel, create_engine
 
+APP_NAME = 'timerdo'
+app_dir = typer.get_app_dir(APP_NAME)
+app_dir_path = Path(app_dir)
+app_dir_path.mkdir(parents=True, exist_ok=True)
 
-class ToDo(SQLModel, table=True):
-    """SQL table and table instance for the 'to do' list"""
-    id: Optional[int] = Field(default=None, primary_key=True)
-    date_init: date = date.today()
-    data_end: Optional[date] = None
-    task: str
-    status: str
-    tag: Optional[str] = None
-    remarks: Optional[str] = None
-    due_date: Optional[date] = None
-    reminder: Optional[date] = None
-    project: Optional[str] = None
+sqlite_file_name = os.path.join(app_dir, 'timerdo_db.db')
 
-    timers: Optional[List['Timer']] = Relationship(back_populates='task')
+sqlite_url = f'sqlite:///{sqlite_file_name}'
+
+engine = create_engine(sqlite_url, echo=False)
 
 
-class Timer(SQLModel, table=True):
-    """SQL table and table instance for the timer schedule"""
-    id: Optional[int] = Field(default=None, primary_key=True)
-    id_todo: int = Field(foreign_key='todo.id')
-
-    start: datetime = datetime.now()
-    end: Optional[datetime] = None
-    duration: Optional[timedelta] = None
-
-    task: ToDo = Relationship(back_populates='timers')
-
-
-def create_db_and_tables(engine):
+def create_db_and_tables():
     SQLModel.metadata.create_all(engine)

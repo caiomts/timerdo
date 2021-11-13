@@ -1,36 +1,28 @@
-import os
 import time
 from datetime import datetime, timedelta, date
-from pathlib import Path
 
 import typer
 from sqlalchemy.exc import NoResultFound, OperationalError
-from sqlmodel import Session, create_engine, select, or_
+from sqlmodel import Session, select
 from tabulate import tabulate
 
-from .database import ToDo, Timer, create_db_and_tables
-from .functions_aux import round_timedelta, Status, make_table_view
+from . import reports
+from .database import create_db_and_tables, engine
+from .functions_aux import Status, make_table_view, pop_up_msg
+from .tables import ToDo, Timer
 
 app = typer.Typer()
-
-APP_NAME = 'timerdo'
-app_dir = typer.get_app_dir(APP_NAME)
-app_dir_path = Path(app_dir)
-app_dir_path.mkdir(parents=True, exist_ok=True)
-
-sqlite_file_name = os.path.join(app_dir, 'timerdo_db.db')
-
-sqlite_url = f'sqlite:///{sqlite_file_name}'
-
-engine = create_engine(sqlite_url, echo=False)
+app.add_typer(reports.app, name='report', help='Print customized reports')
 
 
 @app.command()
-def add(task: str, project: str = None, due_date: datetime = typer.Option(
-    None, formats=['%Y-%m-%d']), reminder: datetime = typer.Option(
-    None, formats=['%Y-%m-%d']),
-        status: Status = typer.Option(Status.to_do),
-        tag: str = None):
+def add(task: str, project: str = typer.Option(None, '--project', '-p'),
+        due_date: datetime = typer.Option(None, '--due-date', '-d',
+                                          formats=['%Y-%m-%d']),
+        reminder: datetime = typer.Option(None, '--reminder', '-r',
+                                          formats=['%Y-%m-%d']),
+        status: Status = typer.Option(Status.to_do, '--status', '-s'),
+        tag: str = typer.Option(None, '--tag', '-t')):
     """Add task to the to-do list."""
     try:
         today = datetime.today()
@@ -70,13 +62,13 @@ def add(task: str, project: str = None, due_date: datetime = typer.Option(
             session.add(new_entry)
             session.commit()
     except OperationalError:
-        create_db_and_tables(engine)
+        create_db_and_tables()
         add(task=task, project=project, due_date=due_date, reminder=reminder,
             status=status, tag=tag)
 
 
 @app.command()
-def start(task_id: int, end: datetime = typer.Option(None,
+def start(task_id: int, end: datetime = typer.Option(None, '--end', '-e',
                                                      formats=
                                                      ['%Y-%m-%d %H:%M:%S'])):
     """Start Timer for a given open task."""
@@ -90,48 +82,56 @@ def start(task_id: int, end: datetime = typer.Option(None,
             pass
 
         try:
-            query = session.exec(select(ToDo).where(ToDo.id == task_id)).one()
+            query = session.get(ToDo, task_id)
             if not query.status == 'done':
                 if query.status == 'to do':
                     query.status = 'doing'
                     session.add(query)
-                session.add(Timer(id_todo=task_id))
-                session.commit()
-                if end is not None and end > datetime.now():
+                if end is not None:
+                    if end < datetime.now():
+                        typer.secho(
+                            f'\nEnd must be grater than {datetime.now()}\n',
+                            fg=typer.colors.RED)
+                        raise typer.Exit(code=1)
                     total_seconds = int(
                         (end - datetime.now()).total_seconds())
+
+                    session.add(Timer(id_todo=task_id))
+                    session.commit()
+
                     with typer.progressbar(length=total_seconds) as progress:
                         while datetime.now() < end:
                             time.sleep(1)
                             progress.update(1)
                         else:
-                            typer.secho('\n\nYou Time is over! Well done!\n',
+                            typer.secho('\n\nYour Time is over! Well done!\n',
                                         blink=True,
                                         fg=typer.colors.BRIGHT_GREEN)
+                            pop_up_msg()
                             remark = typer.confirm("Any remark?")
                             if remark:
                                 remark = typer.prompt('Enter your remarks.')
                             else:
                                 remark = None
                             stop(remarks=remark)
+                            typer.Exit()
                 else:
-                    typer.secho(
-                        f'\nEnd must be grater than {datetime.now()}\n',
-                        fg=typer.colors.RED)
-                    raise typer.Exit(code=1)
+                    session.add(Timer(id_todo=task_id))
+                    session.commit()
+
             else:
                 typer.secho(f'\nTask already done\n',
                             fg=typer.colors.RED)
                 raise typer.Exit(code=1)
 
-        except NoResultFound:
+        except AttributeError:
             typer.secho(f'\nInvalid task id\n',
                         fg=typer.colors.RED)
             raise typer.Exit(code=1)
 
 
 @app.command()
-def stop(remarks: str = None):
+def stop(remarks: str = typer.Option(None, '--remarks', '-r')):
     """Stop Timer."""
     with Session(engine) as session:
         try:
@@ -141,8 +141,7 @@ def stop(remarks: str = None):
             query_timer.duration = query_timer.end - query_timer.start
             session.add(query_timer)
 
-            query = session.exec(
-                select(ToDo).where(ToDo.id == query_timer.id_todo)).one()
+            query = session.get(ToDo, query_timer.id_todo)
 
             check = typer.confirm('Is the task done?')
 
@@ -151,7 +150,7 @@ def stop(remarks: str = None):
             else:
                 if check:
                     query.status = 'done'
-                    query.data_end = query_timer.end.date()
+                    query.date_end = query_timer.end.date()
                 if remarks:
                     query.remarks = remarks
 
@@ -159,22 +158,21 @@ def stop(remarks: str = None):
             session.commit()
 
         except NoResultFound:
-            typer.secho(f'No task running', fg=typer.colors.RED)
+            typer.secho(f'\nNo task running\n', fg=typer.colors.RED)
             raise typer.Exit(code=1)
 
 
 @app.command()
-def view(due_date: datetime = typer.Option(None, formats=['%Y-%m-%d'])):
-    """View to-do list"""
+def view(due_date: datetime = typer.Option(datetime.today() +
+                                           timedelta(weeks=1),
+                                           formats=['%Y-%m-%d'])):
+    """Print to-do list view"""
     overdue = select(ToDo).where(ToDo.due_date < date.today(),
                                  ToDo.status != 'done').order_by(ToDo.due_date)
 
     reminders = select(ToDo).where(ToDo.reminder <= date.today(),
                                    ToDo.status != 'done').order_by(
         ToDo.due_date)
-
-    if due_date is None:
-        due_date = date.today() + timedelta(weeks=1)
 
     due_in = select(ToDo).where(
         ToDo.due_date < due_date, ToDo.due_date >= date.today(),
@@ -196,7 +194,8 @@ def view(due_date: datetime = typer.Option(None, formats=['%Y-%m-%d'])):
                              headers="firstrow"), fg=typer.colors.BRIGHT_WHITE)
 
     if len(make_table_view(engine, due_in)) > 1:
-        typer.secho(f'\nDUE IN\n', fg=typer.colors.BRIGHT_GREEN, bold=True)
+        typer.secho(f'\nDUE IN {due_date.date()}\n',
+                    fg=typer.colors.BRIGHT_GREEN, bold=True)
         typer.secho(tabulate(make_table_view(engine, due_in),
                              headers="firstrow"), fg=typer.colors.BRIGHT_WHITE)
 
@@ -205,23 +204,3 @@ def view(due_date: datetime = typer.Option(None, formats=['%Y-%m-%d'])):
         typer.secho(tabulate(make_table_view(engine, no_due),
                              headers="firstrow"), fg=typer.colors.BRIGHT_WHITE)
     print('\n')
-
-
-def report():
-    ...
-
-
-def log():
-    ...
-
-
-def edit_todo():
-    ...
-
-
-def edit_timer():
-    ...
-
-
-def edit():
-    ...
