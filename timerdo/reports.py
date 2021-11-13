@@ -97,6 +97,9 @@ def log(init: datetime = typer.Option(datetime.today() - timedelta(weeks=4),
     """Print to-do list"""
     query = select(ToDo).where(ToDo.date_init >= init)
     table = make_table_view(engine, query)
+    typer.secho(f'\nTASKS FROM {init.date()} TILL NOW\n',
+                fg=typer.colors.GREEN,
+                bold=True)
     typer.secho(f'\n{tabulate(table, headers="firstrow")}\n',
                 fg=typer.colors.BRIGHT_WHITE)
 
@@ -118,10 +121,11 @@ def task(id: int):
                        task['remarks'], task['reminder']]]
 
         typer.secho(f"""
-            {task['task']}
-ID: {task['id']}                    DUE: {task['due_date']}  
+{task['task']}
+
+ID: {task['id']}                    DUE IN: {task['due_date']}  
         
-STATUS: {task['status'].upper()}            PROJECT: {task['project'].upper()}
+STATUS: {task['status'].upper()}            PROJECT: {task['project']}
 """,
                     fg=typer.colors.GREEN, bold=True)
 

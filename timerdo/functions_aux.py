@@ -2,6 +2,7 @@ from datetime import timedelta
 from enum import Enum
 from tkinter import *
 from tkinter import ttk
+import typer
 
 from sqlmodel import Session
 
@@ -38,12 +39,16 @@ def list_query(engine, query):
     """Calculate duration of a task"""
     with Session(engine) as session:
         query_list = session.exec(query).all()
-
-        for task in query_list:
-            duration = timedelta()
-            for dur in task.timers:
-                duration += dur.duration
-            yield task, duration
+        try:
+            for task in query_list:
+                duration = timedelta()
+                for dur in task.timers:
+                    duration += dur.duration
+                yield task, duration
+        except TypeError:
+            typer.secho(f'\nTask is running. Stop timer first.\n',
+                        fg=typer.colors.RED)
+            raise typer.Exit(code=1)
 
 
 def make_table_view(engine, tasks):

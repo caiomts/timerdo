@@ -3,7 +3,7 @@ from datetime import datetime, timedelta, date
 
 import typer
 from sqlalchemy.exc import NoResultFound, OperationalError
-from sqlmodel import Session, select
+from sqlmodel import Session, select, col, func
 from tabulate import tabulate
 
 from . import reports
@@ -61,6 +61,10 @@ def add(task: str, project: str = typer.Option(None, '--project', '-p'),
                              status=status, tag=tag)
             session.add(new_entry)
             session.commit()
+
+            new_id = session.exec(select(func.max(ToDo.id))).one()
+            typer.secho(f'Add \n{task}. Task id: {new_id}\n',
+                        fg=typer.colors.GREEN)
     except OperationalError:
         create_db_and_tables()
         add(task=task, project=project, due_date=due_date, reminder=reminder,
@@ -99,6 +103,10 @@ def start(task_id: int, end: datetime = typer.Option(None, '--end', '-e',
                     session.add(Timer(id_todo=task_id))
                     session.commit()
 
+                    new_id = session.exec(select(func.max(Timer.id))).one()
+                    typer.secho(
+                        f'\nTask (Start task{task_id}). Timer id: {new_id}\n',
+                        fg=typer.colors.GREEN)
                     with typer.progressbar(length=total_seconds) as progress:
                         while datetime.now() < end:
                             time.sleep(1)
@@ -118,6 +126,11 @@ def start(task_id: int, end: datetime = typer.Option(None, '--end', '-e',
                 else:
                     session.add(Timer(id_todo=task_id))
                     session.commit()
+
+                    new_id = session.exec(select(func.max(Timer.id))).one()
+                    typer.secho(
+                        f'\nTask (Start task{task_id}). Timer id: {new_id}\n',
+                        fg=typer.colors.GREEN)
 
             else:
                 typer.secho(f'\nTask already done\n',
@@ -156,6 +169,11 @@ def stop(remarks: str = typer.Option(None, '--remarks', '-r')):
 
             session.add(query)
             session.commit()
+
+            new_id = session.exec(select(func.max(Timer.id))).one()
+            typer.secho(
+                f'\nStop task ({query.id}). Timer id: {new_id}\n',
+                fg=typer.colors.GREEN)
 
         except NoResultFound:
             typer.secho(f'\nNo task running\n', fg=typer.colors.RED)
