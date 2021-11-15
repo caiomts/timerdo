@@ -74,9 +74,8 @@ def add(task: str, project: str = typer.Option(None, '--project', '-p'),
 
 
 @app.command()
-def start(task_id: int, end: datetime = typer.Option(None, '--end', '-e',
-                                                     formats=
-                                                     ['%Y-%m-%d %H:%M:%S'])):
+def start(task_id: int, duration: int = typer.Option(None, '--duration', '-d',
+                                                     help='Duration in minutes')):
     """Start Timer for a given open task."""
     with Session(engine) as session:
         try:
@@ -93,24 +92,23 @@ def start(task_id: int, end: datetime = typer.Option(None, '--end', '-e',
                 if query.status == 'to do':
                     query.status = 'doing'
                     session.add(query)
-                if end is not None:
-                    if end < datetime.now():
+                if duration is not None:
+                    duration = timedelta(minutes=duration)
+                    if duration <= timedelta(minutes=0):
                         typer.secho(
-                            f'\nEnd must be grater than {datetime.now()}\n',
+                            f'\nDuration must be grater than 0\n',
                             fg=typer.colors.RED)
                         raise typer.Exit(code=1)
-                    total_seconds = int(
-                        (end - datetime.now()).total_seconds())
-
+                    total_seconds = int(duration.total_seconds())
                     session.add(Timer(id_todo=task_id))
                     session.commit()
-
                     new_id = session.exec(select(func.max(Timer.id))).one()
                     typer.secho(
-                        f'\nTask (Start task{task_id}). Timer id: {new_id}\n',
+                        f'\nTask Start task {task_id}. Timer id: {new_id}\n',
                         fg=typer.colors.GREEN)
                     with typer.progressbar(length=total_seconds) as progress:
-                        while datetime.now() < end:
+                        end = datetime.utcnow() + duration
+                        while datetime.utcnow() < end:
                             time.sleep(1)
                             progress.update(1)
                         else:
@@ -131,7 +129,7 @@ def start(task_id: int, end: datetime = typer.Option(None, '--end', '-e',
 
                     new_id = session.exec(select(func.max(Timer.id))).one()
                     typer.secho(
-                        f'\nTask (Start task{task_id}). Timer id: {new_id}\n',
+                        f'\nStart task {task_id}. Timer id: {new_id}\n',
                         fg=typer.colors.GREEN)
 
             else:
@@ -152,7 +150,7 @@ def stop(remarks: str = typer.Option(None, '--remarks', '-r')):
         try:
             query_timer = session.exec(
                 select(Timer).where(Timer.end == None)).one()
-            query_timer.end = datetime.now()
+            query_timer.end = datetime.utcnow()
             query_timer.duration = query_timer.end - query_timer.start
             session.add(query_timer)
 

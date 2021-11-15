@@ -1,14 +1,12 @@
-from datetime import datetime, timedelta
-from typing import List, Optional
+from datetime import datetime
+from typing import Optional
 
 import typer
-from sqlmodel import Session, select, col
 from sqlalchemy.orm.exc import UnmappedInstanceError
-from tabulate import tabulate
+from sqlmodel import Session, select
 
 from .database import engine
-from .functions_aux import make_table_projects, make_table_view, list_query, \
-    round_timedelta, Status
+from .functions_aux import Status
 from .tables import ToDo, Timer
 
 app = typer.Typer()
@@ -23,86 +21,86 @@ def task(id: str, task: str = None,
     """Edit record from to-do list"""
     with Session(engine) as session:
         try:
-                query = session.get(ToDo, id)
+            query = session.get(ToDo, id)
 
-                if task is not None:
-                    query.task = task
-                if tag is not None:
-                    query.tag = tag
-                if remarks is not None:
-                    query.remarks = remarks
-                if project is not None:
-                    query.project = project
+            if task is not None:
+                query.task = task
+            if tag is not None:
+                query.tag = tag
+            if remarks is not None:
+                query.remarks = remarks
+            if project is not None:
+                query.project = project
 
-                if status is None or status == query.status:
-                    pass
-                elif status == 'done':
-                    query.status = status
-                    query.date_end = datetime.now().date()
-                elif status == 'doing' and query.status == 'done':
-                    query.status = status
-                    query.date_end = None
-                elif status == 'to do':
-                    timer = session.exec(select(Timer).where(
-                        Timer.id_todo == id)).all()
-                    if len(timer) > 0:
-                        typer.secho(f'\nTask already started\n',
-                                    fg=typer.colors.RED)
-                        raise typer.Exit(code=1)
-                    else:
-                        query.status = status
-                        query.date_end = None
+            if status is None or status == query.status:
+                pass
+            elif status == 'done':
+                query.status = status
+                query.date_end = datetime.now().date()
+            elif status == 'doing' and query.status == 'done':
+                query.status = status
+                query.date_end = None
+            elif status == 'to do':
+                timer = session.exec(select(Timer).where(
+                    Timer.id_todo == id)).all()
+                if len(timer) > 0:
+                    typer.secho(f'\nTask already started\n',
+                                fg=typer.colors.RED)
+                    raise typer.Exit(code=1)
                 else:
                     query.status = status
+                    query.date_end = None
+            else:
+                query.status = status
 
-                today = datetime.today()
-                if due_date is not None and reminder \
-                        is not None and reminder >= due_date:
-                    typer.secho(
-                        f'\nreminder must be smaller than {due_date.date()}\n',
-                        fg=typer.colors.RED)
-                    raise typer.Exit(code=1)
+            today = datetime.today()
+            if due_date is not None and reminder \
+                    is not None and reminder >= due_date:
+                typer.secho(
+                    f'\nreminder must be smaller than {due_date.date()}\n',
+                    fg=typer.colors.RED)
+                raise typer.Exit(code=1)
 
-                elif due_date is not None and due_date <= today:
-                    typer.secho(f'\ndue date must be grater than {today.date()}\n',
-                                fg=typer.colors.RED)
-                    raise typer.Exit(code=1)
-
-                elif reminder is not None and reminder <= today:
-                    typer.secho(
-                        f'\nreminder must be grater than {today.date()}\n',
-                        fg=typer.colors.RED)
-                    raise typer.Exit(code=1)
-
-                elif due_date is not None and query.reminder \
-                        is not None and due_date < query.reminder:
-                    typer.secho(
-                        f'\ndue date must be grater than {query.reminder.date()}\n',
-                        fg=typer.colors.RED)
-                    raise typer.Exit(code=1)
-
-                elif reminder is not None and query.due_date \
-                        is not None and reminder >= query.due_date:
-                    typer.secho(
-                        f'\nreminder must be smaller than {query.due_date.date()}\n',
-                        fg=typer.colors.RED)
-                    raise typer.Exit(code=1)
-
-                elif reminder is not None:
-                    query.reminder = reminder
-                elif due_date is not None:
-                    query.due_date = due_date
-
-                session.add(query)
-                edit = typer.confirm(f"""Are you sure you want to edit:
-                {query}""")
-                if not edit:
-                    typer.secho("Not editing",
-                                fg=typer.colors.RED)
-                    raise typer.Abort()
-                typer.secho("Editing it!",
+            elif due_date is not None and due_date <= today:
+                typer.secho(f'\ndue date must be grater than {today.date()}\n',
                             fg=typer.colors.RED)
-                session.commit()
+                raise typer.Exit(code=1)
+
+            elif reminder is not None and reminder <= today:
+                typer.secho(
+                    f'\nreminder must be grater than {today.date()}\n',
+                    fg=typer.colors.RED)
+                raise typer.Exit(code=1)
+
+            elif due_date is not None and query.reminder \
+                    is not None and due_date < query.reminder:
+                typer.secho(
+                    f'\ndue date must be grater than {query.reminder.date()}\n',
+                    fg=typer.colors.RED)
+                raise typer.Exit(code=1)
+
+            elif reminder is not None and query.due_date \
+                    is not None and reminder >= query.due_date:
+                typer.secho(
+                    f'\nreminder must be smaller than {query.due_date.date()}\n',
+                    fg=typer.colors.RED)
+                raise typer.Exit(code=1)
+
+            elif reminder is not None:
+                query.reminder = reminder
+            elif due_date is not None:
+                query.due_date = due_date
+
+            session.add(query)
+            edit = typer.confirm(f"""Are you sure you want to edit:
+                {query}""")
+            if not edit:
+                typer.secho("Not editing",
+                            fg=typer.colors.RED)
+                raise typer.Abort()
+            typer.secho("Editing it!",
+                        fg=typer.colors.RED)
+            session.commit()
         except AttributeError:
             typer.secho(f'\nInvalid task id\n',
                         fg=typer.colors.RED)
@@ -191,20 +189,3 @@ def del_project(project: str):
             typer.secho(f'\nInvalid project\n',
                         fg=typer.colors.RED)
             raise typer.Exit(code=1)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

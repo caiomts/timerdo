@@ -52,7 +52,7 @@ def list_query(engine, query):
 
 
 def make_table_view(engine, tasks):
-    table = [['id', 'Task', 'Project', 'Status', 'Tag', 'Remarks', 'hh:mm',
+    table = [['id', 'Task', 'Project', 'Status', 'Tag', 'hh:mm',
               'Due in']]
     try:
         for i in list_query(engine, tasks):
@@ -60,7 +60,7 @@ def make_table_view(engine, tasks):
             duration = i[1]
             table.append(
                 [task.id, task.task, task.project, task.status, task.tag,
-                 task.remarks, round_timedelta(duration), task.due_date])
+                 round_timedelta(duration), task.due_date])
     except UnboundLocalError:
         pass
     return table
