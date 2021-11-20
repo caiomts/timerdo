@@ -3,7 +3,7 @@
 Timerdo is a CLI app that manages a minimalist to-do list with built-in timer 
 to track your work and keep you productive.
 
-If you are interested about how Timerdo is built you can go  directly [here](# About it)
+If you are interested about how Timerdo is built you can go  directly [here](https://github.com/caiomts/timerdo#about)
 
 # Installation
 
