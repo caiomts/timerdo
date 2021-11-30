@@ -182,16 +182,19 @@ you call a command.
 
 ![](images/edit_help.png)
 
-The module has four commands, where you can delete or edit tasks and where you can
+The module has six commands, where you can delete or edit tasks and timers and where you can
 rely on the project name as a glue to delete all tasks with the same project name at once.
 
-Both `del-task` and `del-project` have only one required argument - `id` or `project`. 
+`del-task`, `del-timer` and `del-project` have only one required argument - `id` or `project`. 
 
 `project` command has two required arguments: the name of the project and the new name.
 It will just change the project name in all tasks with the same project name.
 
 `task` command works like `add` command but the first argument is the id of the task
 you are trying to modify.
+
+`timer` command has only one argument: `end`, where you should pass the
+argument in the following format: '%Y-%m-%d %H:%M:%S'.
 
 
 # About
@@ -210,6 +213,8 @@ All images in this README were created with [carbon](https://carbon.now.sh/).
 # Release
 
 0.0.1
+
+0.0.2 - Two new features to edit and delete Timer records.
 
 # License
 Timerdo is released under MIT License.
