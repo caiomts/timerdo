@@ -192,7 +192,9 @@ def del_project(project: str):
 
 
 @app.command()
-def timer(id: int, end: datetime):
+def timer(id: int,
+          end: datetime = typer.Option('', formats=['%Y-%m-%d %H:%M:%S'])):
+    """Edit record from Timer"""
     with Session(engine) as session:
         try:
             query = session.get(Timer, id)
@@ -225,6 +227,7 @@ def timer(id: int, end: datetime):
 
 @app.command()
 def del_timer(id: int):
+    """Delete record from Timer"""
     with Session(engine) as session:
         try:
             query = session.get(Timer, id)
