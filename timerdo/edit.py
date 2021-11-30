@@ -189,3 +189,56 @@ def del_project(project: str):
             typer.secho(f'\nInvalid project\n',
                         fg=typer.colors.RED)
             raise typer.Exit(code=1)
+
+
+@app.command()
+def timer(id: int, end: datetime):
+    with Session(engine) as session:
+        try:
+            query = session.get(Timer, id)
+            if end <= query.start:
+                typer.secho(
+                    f'\nEnd must be >= {query.start}\n',
+                    fg=typer.colors.RED)
+                raise typer.Exit(code=1)
+            if end >= datetime.now():
+                typer.secho(
+                    f'\nEnd must be < {datetime.now()}'
+                )
+                raise typer.Exit(code=1)
+
+            query.end = end
+            session.add(query)
+            edit = typer.confirm(f"""Are you sure you want to edit:
+                        {query}""")
+            if not edit:
+                typer.secho("Not editing",
+                            fg=typer.colors.RED)
+                raise typer.Abort()
+            typer.secho("Editing it!",
+                        fg=typer.colors.RED)
+            session.commit()
+        except AttributeError:
+            typer.secho(f'\nInvalid timer id\n',
+                        fg=typer.colors.RED)
+
+
+@app.command()
+def del_timer(id: int):
+    with Session(engine) as session:
+        try:
+            query = session.get(Timer, id)
+            session.delete(query)
+            edit = typer.confirm(f"""Are you sure you want to delete:
+            {query}""")
+            if not edit:
+                typer.secho("Not deleting",
+                            fg=typer.colors.RED)
+                raise typer.Abort()
+            typer.secho("deleting it!",
+                        fg=typer.colors.RED)
+            session.commit()
+
+        except AttributeError:
+            typer.secho(f'\nInvalid timer id\n',
+                        fg=typer.colors.RED)
