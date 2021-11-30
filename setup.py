@@ -9,7 +9,7 @@ with open('/home/cmts/Documents/misc/timerdo/requirements.txt', 'r',
 
 setuptools.setup(
     name='timerdo',
-    version='0.0.1',
+    version='0.0.2',
     author='Caio Mescouto',
     author_email='caiomescouto@gmail.com',
     description='A minimalist to-do list with a built-in timer',
