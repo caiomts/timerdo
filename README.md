@@ -16,7 +16,7 @@ Timerdo is 100% python, so pip installation should work regardless of your OS.
 # Quick Start
 
 **Timerdo was thought to track tasks, so tasks are its building blocks. 
-Keep it in mind.** 
+Keep that in mind.** 
 
 **Done is Done. You can't do anything else with a task once it's done.**
 
@@ -29,14 +29,14 @@ Task is a required argument, but you have some options. Let's take a look on it:
 
 ![](images/add_help.png)
 
-So, you can also define a project to the task, but remember what I said? 
-Tasks are the building block, so there is no project without a task!
+So, you can also define a project to the task, but remember, 
+tasks are the building blocks, so there is no project without a task!
 
-In addition, you can set a due date for you task and a tag.
+In addition, you can set a due date for your task and a tag.
 
 The reminder has a special feature. 
 It will appear in your to-do list only after the defined day. 
-This is for that type of task that you must do at a specific time or just remember it later.  
+This is for the type of task that you have to do at a specific time or can just remember later.  
 
 Finally, you can change the default status, but keep in mind. Done is Done.
 You can visualize what was done, but that's it.
@@ -48,14 +48,14 @@ Now that you already have a task, let's keep track of the time you spend on it.
 ![](images/start_1.png)
 
 To start tracking the task ID is a required argument, 
-I'll show you in a bit how to get to know the tasks IDs, but first let's take a look at the help.
+I'll show you in a bit how to get to know the task IDs, but first let's take a look at the help.
 
 ![](images/start_help.png)
 
 Nice, you can also set a *timebox* with the `--duration` flag! If you do so,
 Timerdo keeps running and a message will pop up when you are done.
 
-But How do I know my tasks IDs?!
+But How do I know my task IDs?!
 
 ## View
 
@@ -65,25 +65,25 @@ you simply call the view.
 
 ![](images/view.png)
 
-This is the structure of the view, but Timerdo will show you only heads that
-you have at least a task.
+This is the structure of the view, but Timerdo will only show you heads that
+you have at least one task.
 
-Let's see the help
+Let's see the help.
 
 ![](images/view_help.png)
 
-You can set until when it shows up the tasks with due dates. The default is
+You can set the date until when it shows the tasks with due dates. The default is
 one week ahead.
 
 ## Stop
 
-But let's stop our task!
+Now, how do we stop the timer?
 
 ![](images/stop_1.png)
 
-Timerdo keep track of task status! So, whenever you start a task, if the status
+Timerdo keeps track of task status! So, whenever you start a task, if the status
 is `to do`, Timerdo automatically changes it to `doing` and whenever you stop the timer
-it ask you if you have finished the task. Cool, right?
+it asks you if you have finished the task. Cool, right?
 
 *Timerdo don't let you work on a done task as well ;)*
 
@@ -91,10 +91,10 @@ As always, let's look at the help:
 
 ![](images/stop_help.png)
 
-You can also write down some remarks to keep track of something important.
+You can also add a note to keep track of something important.
 If you start a timer as a *timebox* this option will also be asked by the prompt.
 
-Now you already know how to use the main features, and this is almost everything
+Now you know how to use the main features, and this is almost everything
 you need to use Timerdo. 
 
 But let's say you are interested in seeing all tasks you
@@ -136,14 +136,14 @@ As there is nothing to be done with a done task, there is no ongoing project wit
 
 ![](images/projects_help.png)
 
-Calling `project` command with no flag you will see a list of all tasks sorted by 
+Calling `project` command with no flag, brings up a list of all tasks sorted by 
 project name, and you will have the information of how much time you've spent in each
 project (or in a group of tasks you bunched together).
 
 ![](images/projects.png)
 
 This command has also three options, the first one (`--init`) has a default that 
-restricts the projects to show up to all project that has one task initiated after this date.
+restricts the projects to show up if at least one of the task in the project was not initiated after the given date.
 
 The second option (`--project`) allows you to define which projects should be displayed. 
 Timerdo also allows you to define more than one project (see below).
@@ -159,7 +159,7 @@ The only difference is that it does not display how much time was spent per tag.
 Tag has no special feature, so you can use it as you want.
 
 ### Task
-The prom queen! `Task` command has only on required argument with no options.
+The prom queen! `Task` command has only one required argument with no options.
 
 ![](images/task_help.png)
 
@@ -173,7 +173,7 @@ But what if I do something wrong?! This is where the last module comes in.
 
 ## Edit
 
-`Edit` is where you can - you probably already know - edit your records.
+`Edit` is where you can - you probably already guessed - edit your records.
 
 It's not a good place to be, so Timerdo will display raw records and ask for confirmations every time
 you call a command. 
@@ -187,7 +187,7 @@ rely on the project name as a glue to delete all tasks with the same project nam
 
 Both `del-task` and `del-project` have only one required argument - `id` or `project`. 
 
-`project` command have two required arguments the name of the project and the new name.
+`project` command has two required arguments: the name of the project and the new name.
 It will just change the project name in all tasks with the same project name.
 
 `task` command works like `add` command but the first argument is the id of the task
@@ -196,7 +196,7 @@ you are trying to modify.
 
 # About
 
-Timerdo is a side project and was born out of my need. I'd been using [Watson](https://github.com/TailorDev/Watson) 
+Timerdo is a side project and was born out of my personal necessity. I'd been using [Watson](https://github.com/TailorDev/Watson) 
 for a while and it's very handy, but I had to keep a to-do list apart. Currently, Timerdo is
 an app I use daily to maintain my to-do list while I keep track my time.
 
