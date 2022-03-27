@@ -1,175 +1,223 @@
-from typer.testing import CliRunner
-
 import os
-
-from timerdo.main import app, sqlite_file_name
-from timerdo.tables import ToDo, Timer
-from sqlmodel import create_engine, Session, select
 from datetime import datetime, timedelta
 
-try:
-    os.rename('/home/cmts/.config/timerdo/timerdo_db.db',
-              '/home/cmts/.config/timerdo/timerdo_db_moved.db')
-except FileNotFoundError:
-    pass
+import pytest
+from faker import Faker
+from sqlmodel import Session, select
+from typer.testing import CliRunner
+
+from timerdo.database import engine
+from timerdo.functions_aux import Status
+from timerdo.main import app
+from timerdo.tables import Timer, ToDo
 
 
-sqlite_url = f'sqlite:///{sqlite_file_name}'
-
-engine = create_engine(sqlite_url, echo=True)
-
-runner = CliRunner()
-
-
-def test_add_none():
-    """Test add function with no argument"""
-    result = runner.invoke(app, ['add'])
-
-    assert result.exit_code == 2
+@pytest.fixture(scope='session')
+def runner():
+    runner = CliRunner()
+    yield runner
 
 
-def test_add_task():
-    """Test add function with task argument"""
-    task = 'test add'
-    result = runner.invoke(app, ['add', task])
+@pytest.fixture()
+def fake_task():
+    task = Faker().sentence(nb_words=10)
+    yield task
+
+
+@pytest.fixture(scope='class')
+def fake_project():
+    yield Faker().sentence(nb_words=3)
+
+
+@pytest.fixture(scope='class')
+def fake_tag():
+    yield Faker().word()
+
+
+@pytest.fixture(scope='class')
+def date_before_today():
+    yield Faker().date_between().strftime('%Y-%m-%d')
+
+
+@pytest.fixture(scope='class')
+def date_after_today():
+    yield (
+        Faker()
+        .date_between_dates(
+            date_start=datetime.today() + timedelta(days=3),
+            date_end=datetime.today() + timedelta(days=50),
+        )
+        .strftime('%Y-%m-%d')
+    )
+
+
+@pytest.fixture(scope='class')
+def date_before_due_date(date_after_today):
+    due_date = datetime.strptime(date_after_today, '%Y-%m-%d').date()
+    yield (due_date - timedelta(1)).strftime('%Y-%m-%d')
     with Session(engine) as session:
-        query = session.exec(select(ToDo).where(ToDo.task == task)).one()
-        task = query.task
-        status = query.status
-
-    assert result.exit_code == 0
-    assert task == task
-    assert status == 'to do'
+        task = session.exec(select(ToDo)).one()
+        session.delete(task)
+        session.commit()
 
 
-def test_add_status():
-    """Test status"""
-    task = 'Test status'
-    status = 'dif'
-    result = runner.invoke(app, ['add', task, '--status', status])
-
-    assert result.exit_code == 1
-    assert 'status must be "to do" or "doing"\n' in result.stdout
-
-
-def test_add_due_date():
-    """Test due date"""
-    task = 'Test due date'
-    date = datetime.strftime(datetime.now(), '%Y-%m-%d')
-    result = runner.invoke(app, ['add', task, '--due-date', date])
-
-    assert result.exit_code == 1
-    assert f'due date must be grater than {datetime.today().date()}\n' in \
-           result.stdout
-
-
-def test_add_reminder():
-    """Test reminder"""
-    task = 'Test reminder'
-    date = datetime.strftime(datetime.now(), '%Y-%m-%d')
-    result = runner.invoke(app, ['add', task, '--reminder', date])
-
-    assert result.exit_code == 1
-    assert f'reminder must be grater than {datetime.today().date()}\n' in \
-           result.stdout
-
-
-def test_add_due_date_reminder():
-    """Test due-date and reminder"""
-    task = 'Test due-date and reminder'
-    due_date = datetime.strftime(
-        datetime.now() + timedelta(days=2), '%Y-%m-%d')
-    reminder = datetime.strftime(
-        datetime.now() + timedelta(days=2), '%Y-%m-%d')
-    result = runner.invoke(app, ['add', task, '--reminder', reminder,
-                                 '--due-date', due_date])
-
-    assert result.exit_code == 1
-    assert f'reminder must be smaller than {due_date}\n' in \
-           result.stdout
-
-
-def test_add_full_entry():
-    """Test add full task"""
-    task = 'something'
-    project = 'test project'
-    due_date = datetime.strftime(
-        datetime.now() + timedelta(days=2), '%Y-%m-%d')
-    reminder = datetime.strftime(
-        datetime.now() + timedelta(days=1), '%Y-%m-%d')
-    status = 'doing'
-    tag = 'tag'
-
-    result = runner.invoke(app, ['add', task,
-                                 '--project', project,
-                                 '--due-date', due_date,
-                                 '--reminder', reminder,
-                                 '--status', status,
-                                 '--tag', tag])
-
-    assert result.exit_code == 0
-
+@pytest.fixture()
+def add_task(fake_task):
     with Session(engine) as session:
-        query = session.exec(select(ToDo).where(ToDo.task == task,
-                                                ToDo.project == project,
-                                                ToDo.status == status,
-                                                ToDo.tag == tag)).one()
-        assert query is not None
+        task = ToDo(task=fake_task, status=Status.to_do)
+        session.add(task)
+        session.commit()
+        task = session.exec(select(ToDo).where(ToDo.task == fake_task)).one()
+        yield task.id
 
 
-def test_start():
-    """Test start"""
-    todo_id = '1'
-    result = runner.invoke(app, ['start', todo_id])
-
-    assert result.exit_code == 0
-
+@pytest.fixture()
+def start_timer(add_task):
+    task_id = add_task
     with Session(engine) as session:
-        query = session.exec(select(ToDo.status).where(ToDo.id ==
-                                                       todo_id)).one()
-
-        assert query == 'doing'
-
-
-def test_start_running():
-    """Test start when running"""
-    todo_id = '1'
-    result = runner.invoke(app, ['start', todo_id])
-
-    assert result.exit_code == 1
-    assert 'The Timer must be stopped first' in result.stdout
+        session.add(Timer(id_todo=task_id))
+        session.commit()
+        yield task_id
+        timer = session.exec(
+            select(Timer).where(Timer.id_todo == task_id)
+        ).one()
+        session.delete(timer)
+        session.commit()
 
 
-def test_stop():
-    """Test stop"""
-    result = runner.invoke(app, ['stop'])
-
-    assert result.exit_code == 0
-
-
-def test_stop_no_run():
-    """Test stop with no run"""
-    result = runner.invoke(app, ['stop'])
-
-    assert result.exit_code == 1
-
-
-def test_duration():
-    """test duration"""
-    todo_id = 1
+@pytest.fixture()
+def change_task_status(add_task):
+    task_id = add_task
     with Session(engine) as session:
-        todo = session.exec(select(ToDo.duration).where(ToDo.id ==
-                                                        todo_id)).one()
-        timer = session.exec(select(Timer.duration).where(Timer.id_todo
-                                                          == todo_id)).one()
-
-        assert todo is not None and todo == timer
+        task = session.get(ToDo, task_id)
+        task.status = 'done'
+        session.commit()
+        yield task_id
 
 
-def test_return_db():
-    try:
-        os.remove('/home/cmts/.config/timerdo/timerdo_db.db')
-        os.rename('/home/cmts/.config/timerdo/timerdo_db_moved.db',
-                  '/home/cmts/.config/timerdo/timerdo_db.db')
-    except FileNotFoundError:
-        pass
+class TestAdd:
+    def test_add_with_no_argument(self, runner):
+        result = runner.invoke(app, ['add'])
+        assert result.exit_code == 2
+
+    def test_add_task_with_due_date_before_today(
+        self, runner, fake_task, date_before_today
+    ):
+        result = runner.invoke(
+            app, ['add', fake_task, '--due-date', date_before_today]
+        )
+
+        assert result.exit_code == 1
+        assert 'Due date must be grater than' in result.stdout
+
+    def test_add_task_with_reminder_before_today(
+        self, runner, fake_task, date_before_today
+    ):
+        result = runner.invoke(
+            app, ['add', fake_task, '--reminder', date_before_today]
+        )
+
+        assert result.exit_code == 1
+        assert 'Reminder must be grater than' in result.stdout
+
+    def test_add_task_with_reminder_after_due_date(
+        self, runner, fake_task, date_after_today
+    ):
+        result = runner.invoke(
+            app,
+            [
+                'add',
+                fake_task,
+                '--reminder',
+                date_after_today,
+                '--due-date',
+                date_after_today,
+            ],
+        )
+
+        assert result.exit_code == 1
+        assert 'Reminder must be smaller than' in result.stdout
+
+    def test_add_all_features(
+        self,
+        runner,
+        fake_task,
+        date_after_today,
+        date_before_due_date,
+        fake_project,
+        fake_tag,
+    ):
+        result = runner.invoke(
+            app,
+            [
+                'add',
+                fake_task,
+                '--project',
+                fake_project,
+                '--due-date',
+                date_after_today,
+                '--reminder',
+                date_before_due_date,
+                '--tag',
+                fake_tag,
+            ],
+        )
+        with Session(engine) as session:
+            query = session.exec(
+                select(ToDo).where(ToDo.task == fake_task)
+            ).one()
+            task = query.task
+            status = query.status
+            project = query.project
+            due_date = query.due_date
+            reminder = query.reminder
+            tag = query.tag
+
+        assert result.exit_code == 0
+        assert task == fake_task
+        assert status == 'to do'
+        assert project == fake_project
+        assert due_date == datetime.fromisoformat(date_after_today).date()
+        assert reminder == datetime.fromisoformat(date_before_due_date).date()
+        assert 'Added new entry with ID' in result.stdout
+
+
+class TestStartStop:
+    def test_start_timer_with_sorter_duration(self, runner):
+        result = runner.invoke(app, ['start', '1', '-d', '1'])
+        assert result.exit_code == 1
+        assert 'Duration must be grater than' in result.stdout
+
+    def test_start_timer_with_running_task(self, runner, start_timer):
+        id = str(start_timer)
+        result = runner.invoke(app, ['start', id])
+        assert result.exit_code == 1
+        assert 'Timer must be stopped first' in result.stdout
+
+    def test_start_timer_with_invalid_task_id(self, runner, add_task):
+        id = str(add_task + 1)
+        result = runner.invoke(app, ['start', id])
+        assert result.exit_code == 1
+        assert 'Invalid task id' in result.stdout
+
+    def test_start_timer_with_done_task(self, runner, change_task_status):
+        id = str(change_task_status)
+        result = runner.invoke(app, ['start', id])
+        assert result.exit_code == 1
+        assert 'Task already done' in result.stdout
+
+    def test_start_timer(self, runner, add_task):
+        id = str(add_task)
+        result = runner.invoke(app, ['start', id])
+        assert result.exit_code == 0
+        assert 'Timer id' in result.stdout
+
+    def test_stop_timer(self, runner):
+        result = runner.invoke(app, ['stop', '-d'])
+        assert result.exit_code == 0
+        assert 'Timer for' in result.stdout
+
+    def test_stop_with_no_running_task(self, runner):
+        result = runner.invoke(app, ['stop', '-d'])
+        assert result.exit_code == 1
+        assert 'No running task' in result.stdout

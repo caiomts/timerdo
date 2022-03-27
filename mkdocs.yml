@@ -1,0 +1,24 @@
+site_name: Timerdo
+site_url: https://example.com/
+markdown_extensions:
+    #- pymdownx.emoji
+    # pymdownx.tasklist
+    # pymdownx.mark
+    # pymdownx.tilde
+    # pymdownx.highlight
+    # pymdownx.superfences
+    # pymdownx.arithmatex
+nav:
+    - Introduction: intro.md
+    - Add: add.md
+    - Start: start.md
+    - Stop: stop.md
+    - List: list.md
+    - Reports: reports.md
+    - Edit: edit.md
+    - About: about.md
+theme: 
+    name: readthedocs
+
+
+

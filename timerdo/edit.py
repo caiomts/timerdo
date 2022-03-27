@@ -4,21 +4,61 @@ from typing import Optional
 import typer
 from sqlalchemy.orm.exc import UnmappedInstanceError
 from sqlmodel import Session, select
+from rich.console import Console
+from rich.prompt import Confirm
 
+from .aux import Status
 from .database import engine
-from .functions_aux import Status
-from .tables import ToDo, Timer
+from .tables import Timer, ToDo
 
 app = typer.Typer()
 
+console = Console(color_system='256', log_path=False)
+
+
+def confirm_task(query):
+    """Handle task message."""
+    edit = Confirm.ask(
+                f"""[red]Are you sure you want to edit the following task?:
+                [white]
+                Date init: {query.date_init}
+                Date end: {query.date_end}
+                task: {query.task}
+                project: {query.project}
+                Status: {query.status}
+                Tag: {query.tag}
+                Due date: {query.due_date}
+                Reminder: {query.reminder}\n
+                """
+            )
+    if not edit:
+        console.log('Not editing', style='red',)
+        raise typer.Abort()
+    console.log('Editing it!', style='red',)
+
+
+def confirm_project(project):
+    """Handle project message."""
+    edit = Confirm.ask(
+                f"""Are you sure you want to edit {project} name?"""
+            )
+    if not edit:
+        console.log('Not editing', style='red',)
+        raise typer.Abort()
+    console.log('Editing it!', style='red',)
+
 
 @app.command()
-def task(id: str, task: str = None,
-         status: Optional[Status] = typer.Option(None),
-         tag: str = None, remarks: str = None, project: str = None,
-         due_date: datetime = typer.Option(None, formats=['%Y-%m-%d']),
-         reminder: datetime = typer.Option(None, formats=['%Y-%m-%d'])):
-    """Edit record from to-do list"""
+def task(
+    id: int,
+    task: str = None,
+    status: Optional[Status] = typer.Option(None),
+    tag: str = None,
+    project: str = None,
+    due_date: datetime = typer.Option(None, formats=['%Y-%m-%d']),
+    reminder: datetime = typer.Option(None, formats=['%Y-%m-%d']),
+):
+    """Edit record from to-do list."""
     with Session(engine) as session:
         try:
             query = session.get(ToDo, id)
@@ -27,202 +67,169 @@ def task(id: str, task: str = None,
                 query.task = task
             if tag is not None:
                 query.tag = tag
-            if remarks is not None:
-                query.remarks = remarks
             if project is not None:
                 query.project = project
 
-            if status is None or status == query.status:
-                pass
-            elif status == 'done':
-                query.status = status
-                query.date_end = datetime.now().date()
-            elif status == 'doing' and query.status == 'done':
-                query.status = status
-                query.date_end = None
-            elif status == 'to do':
-                timer = session.exec(select(Timer).where(
-                    Timer.id_todo == id)).all()
-                if len(timer) > 0:
-                    typer.secho(f'\nTask already started\n',
-                                fg=typer.colors.RED)
-                    raise typer.Exit(code=1)
-                else:
+            timer = session.exec(
+                    select(Timer).where(Timer.id_todo == id)
+                ).all()
+
+            match status:
+                case None:
+                    pass
+                case 'done':
                     query.status = status
-                    query.date_end = None
-            else:
-                query.status = status
+                    query.date_end = datetime.now().date()
+                case 'doing':
+                    if query.status == 'done':
+                        query.date_end = None
+                    query.status = status
+                case 'to do':
+                    if len(timer) > 0:
+                        console.log('Task already started\n', style='red')
+                        raise typer.Exit(code=1)
+                    else:
+                        query.status = status
+                        query.date_end = None
+                case _:
+                    query.status = status
 
             today = datetime.today()
-            if due_date is not None and reminder \
-                    is not None and reminder >= due_date:
-                typer.secho(
-                    f'\nreminder must be smaller than {due_date.date()}\n',
-                    fg=typer.colors.RED)
-                raise typer.Exit(code=1)
 
-            elif due_date is not None and due_date <= today:
-                typer.secho(f'\ndue date must be grater than {today.date()}\n',
-                            fg=typer.colors.RED)
+            if (
+                due_date is not None
+                and reminder is not None
+                and reminder >= due_date
+            ):
+                console.log(
+                    f'reminder must be smaller than {due_date.date()}\n',
+                    style='red',
+                )
                 raise typer.Exit(code=1)
-
-            elif reminder is not None and reminder <= today:
-                typer.secho(
-                    f'\nreminder must be grater than {today.date()}\n',
-                    fg=typer.colors.RED)
+            elif (
+                due_date is not None
+                and query.reminder is not None
+                and due_date < query.reminder
+            ):
+                console.log(
+                    f'due date must be grater than {query.reminder.date()}\n',
+                    style='red',
+                )
                 raise typer.Exit(code=1)
-
-            elif due_date is not None and query.reminder \
-                    is not None and due_date < query.reminder:
-                typer.secho(
-                    f'\ndue date must be grater than {query.reminder.date()}\n',
-                    fg=typer.colors.RED)
+            elif (
+                reminder is not None
+                and query.due_date is not None
+                and reminder >= query.due_date
+            ):
+                console.log(
+                    f'reminder must be smaller than {query.due_date.date()}\n',
+                    style='red',
+                )
                 raise typer.Exit(code=1)
-
-            elif reminder is not None and query.due_date \
-                    is not None and reminder >= query.due_date:
-                typer.secho(
-                    f'\nreminder must be smaller than {query.due_date.date()}\n',
-                    fg=typer.colors.RED)
-                raise typer.Exit(code=1)
-
             elif reminder is not None:
                 query.reminder = reminder
             elif due_date is not None:
                 query.due_date = due_date
 
             session.add(query)
-            edit = typer.confirm(f"""Are you sure you want to edit:
-                {query}""")
-            if not edit:
-                typer.secho("Not editing",
-                            fg=typer.colors.RED)
-                raise typer.Abort()
-            typer.secho("Editing it!",
-                        fg=typer.colors.RED)
+            confirm_task(query, session)
             session.commit()
-        except AttributeError:
-            typer.secho(f'\nInvalid task id\n',
-                        fg=typer.colors.RED)
-            raise typer.Exit(code=1)
         except UnmappedInstanceError:
-            typer.secho(f'\nInvalid task id\n',
-                        fg=typer.colors.RED)
+            console.log('Invalid task id\n', style='red')
             raise typer.Exit(code=1)
 
 
 @app.command()
 def project(project: str, new_project: str):
-    """Edit project name in tasks"""
+    """Edit project name in tasks."""
     with Session(engine) as session:
-        tasks = session.exec(select(ToDo).where(
-            ToDo.project == project)).all()
+        tasks = session.exec(select(ToDo).where(ToDo.project == project)).all()
         if len(tasks) > 0:
             for task in tasks:
                 task.project = new_project
                 session.add(task)
-            edit = typer.confirm(f"""Are you sure you want to edit:
-            {tasks}""")
-            if not edit:
-                typer.secho("Not editing",
-                            fg=typer.colors.RED)
-                raise typer.Abort()
-            typer.secho("Editing it!",
-                        fg=typer.colors.RED)
+            confirm_project(project)
             session.commit()
         else:
-            typer.secho(f'\nInvalid project\n',
-                        fg=typer.colors.RED)
+            console.log('Invalid project\n', style='red',)
             raise typer.Exit(code=1)
 
 
 @app.command()
-def del_task(id: str):
-    """Delete task"""
+def del_task(task_id: int):
+    """Delete task."""
     try:
         with Session(engine) as session:
-            task = session.get(ToDo, id)
-            timers = session.exec(select(Timer).where(
-                Timer.id_todo == task.id)).all()
+            query = session.get(ToDo, task_id)
+            timers = session.exec(
+                select(Timer).where(Timer.id_todo == query.id)
+            ).all()
             for timer in timers:
                 session.delete(timer)
-            session.delete(task)
-            edit = typer.confirm(f"""Are you sure you want to delete:
-            {task}""")
-            if not edit:
-                typer.secho("Not deleting",
-                            fg=typer.colors.RED)
-                raise typer.Abort()
-            typer.secho("Deleting it!",
-                        fg=typer.colors.RED)
+            session.delete(query)
+            confirm_task(query)
             session.commit()
     except UnmappedInstanceError:
-        typer.secho(f'\nInvalid task id\n',
-                    fg=typer.colors.RED)
-        raise typer.Exit(code=1)
+            console.log('Invalid task id\n', style='red')
+            raise typer.Exit(code=1)
 
 
 @app.command()
 def del_project(project: str):
-    """Delete all tasks from a project"""
+    """Delete all tasks from a project."""
     with Session(engine) as session:
-        tasks = session.exec(select(ToDo).where(
-            ToDo.project == project)).all()
+        tasks = session.exec(select(ToDo).where(ToDo.project == project)).all()
         if len(tasks) > 0:
             for task in tasks:
-                timers = session.exec(select(Timer).where(
-                    Timer.id_todo == task.id)).all()
+                timers = session.exec(
+                    select(Timer).where(Timer.id_todo == task.id)
+                ).all()
                 for timer in timers:
                     session.delete(timer)
                 session.delete(task)
-                session.delete(task)
-            edit = typer.confirm(f"""Are you sure you want to delete:
-            {tasks}""")
+            edit = Confirm.ask(
+                f"""Are you sure you want to edit {project} name?"""
+            )
             if not edit:
-                typer.secho("Not deleting",
-                            fg=typer.colors.RED)
+                console.log('Not editing', style='red',)
                 raise typer.Abort()
-            typer.secho("deleting it!",
-                        fg=typer.colors.RED)
+            console.log('Editing it!', style='red',)
             session.commit()
         else:
-            typer.secho(f'\nInvalid project\n',
-                        fg=typer.colors.RED)
+            console.log('Invalid project\n', style='red',)
             raise typer.Exit(code=1)
 
 
 @app.command()
-def timer(id: int,
-          end: datetime = typer.Option('', formats=['%Y-%m-%d %H:%M:%S'])):
+def timer(
+    id: int, end: datetime = typer.Option('', formats=['%Y-%m-%d %H:%M:%S'])
+):
     """Edit record from Timer"""
     with Session(engine) as session:
         try:
             query = session.get(Timer, id)
             if end <= query.start:
                 typer.secho(
-                    f'\nEnd must be >= {query.start}\n',
-                    fg=typer.colors.RED)
+                    f'\nEnd must be >= {query.start}\n', fg=typer.colors.RED
+                )
                 raise typer.Exit(code=1)
             if end >= datetime.now():
-                typer.secho(
-                    f'\nEnd must be < {datetime.now()}'
-                )
+                typer.secho(f'\nEnd must be < {datetime.now()}')
                 raise typer.Exit(code=1)
 
             query.end = end
             session.add(query)
-            edit = typer.confirm(f"""Are you sure you want to edit:
-                        {query}""")
+            edit = typer.confirm(
+                f"""Are you sure you want to edit:
+                        {query}"""
+            )
             if not edit:
-                typer.secho("Not editing",
-                            fg=typer.colors.RED)
+                typer.secho('Not editing', fg=typer.colors.RED)
                 raise typer.Abort()
-            typer.secho("Editing it!",
-                        fg=typer.colors.RED)
+            typer.secho('Editing it!', fg=typer.colors.RED)
             session.commit()
         except AttributeError:
-            typer.secho(f'\nInvalid timer id\n',
-                        fg=typer.colors.RED)
+            typer.secho(f'\nInvalid timer id\n', fg=typer.colors.RED)
 
 
 @app.command()
@@ -232,16 +239,15 @@ def del_timer(id: int):
         try:
             query = session.get(Timer, id)
             session.delete(query)
-            edit = typer.confirm(f"""Are you sure you want to delete:
-            {query}""")
+            edit = typer.confirm(
+                f"""Are you sure you want to delete:
+            {query}"""
+            )
             if not edit:
-                typer.secho("Not deleting",
-                            fg=typer.colors.RED)
+                typer.secho('Not deleting', fg=typer.colors.RED)
                 raise typer.Abort()
-            typer.secho("deleting it!",
-                        fg=typer.colors.RED)
+            typer.secho('deleting it!', fg=typer.colors.RED)
             session.commit()
 
         except AttributeError:
-            typer.secho(f'\nInvalid timer id\n',
-                        fg=typer.colors.RED)
+            typer.secho(f'\nInvalid timer id\n', fg=typer.colors.RED)

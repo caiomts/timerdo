@@ -1,0 +1,12 @@
+# install production packages
+-r requirements.txt
+
+# install development packages
+isort
+blue
+prospector
+pytest
+pip-audit
+pip-autoremove
+jupyterlab
+mkdocs
