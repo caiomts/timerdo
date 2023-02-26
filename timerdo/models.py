@@ -1,8 +1,14 @@
 from datetime import datetime
-from sqlalchemy import String, ForeignKey
-from sqlalchemy.orm import (
-    DeclarativeBase, Mapped, mapped_column, relationship
-)
+from enum import StrEnum
+
+from sqlalchemy import DateTime, ForeignKey, String
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
+
+
+class Status(StrEnum):
+    to_do = 'To Do'
+    doing = 'Doing'
+    done = 'Done'
 
 
 class Base(DeclarativeBase):
@@ -15,19 +21,30 @@ class ToDo(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     task: Mapped[str] = mapped_column(String)
     tag: Mapped[str | None]
-    status: Mapped[str] = mapped_column(String, default='To Do')
+    status: Mapped[Status] = mapped_column(String, default=Status.to_do)
+    timestamp: Mapped[datetime] = mapped_column(
+        DateTime, default=datetime.utcnow
+    )
 
     timers: Mapped[list['Timer']] = relationship(
         back_populates='todo', cascade='all, delete-orphan'
     )
-    
+
+    def __repr__(self) -> str:
+        return f'Task(id={self.id}, task={self.task}, tag={self.tag}, ' \
+               f' status={self.status}, timestamp_utc={self.timestamp})'
+
 
 class Timer(Base):
     __tablename__ = 'timer'
 
     id: Mapped[int] = mapped_column(primary_key=True)
     task_id: Mapped[int] = mapped_column(ForeignKey('todo_item.id'))
-    start: Mapped[datetime]
+    start: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
     end: Mapped[datetime | None]
 
     todo: Mapped['ToDo'] = relationship(back_populates='timers')
+
+    def __repr__(self) -> str:
+        return f'Timer(id={self.id}, task_id={self.task_id}, ' \
+               f'timestamp_utc={self.start})'

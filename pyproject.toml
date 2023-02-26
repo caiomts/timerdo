@@ -21,19 +21,28 @@ dependencies = [
 Documentation = "https://timerdo.readthedocs.io/en/latest/"
 Source = "https://github.com/caiomts/timerdo"
 
+[project.scripts]
+timerdo = "timerdo.main:app"
+
 [project.optional-dependencies]
 test = [
     "pytest >=7.2.1, <7.3",
 ]
-doc = [
-    "mkdocs >=1.4.2, <1.5",
-    "mkdocstrings[python] >= 0.20.0, <0.21",
-]
-dev = [
-    "black >=23.1.0, <23.2",
-    "isort >=5.12.0, <5.13",
-    "flake8 >=6.0, <6.1",
+docs = [
+	"mkdocs >=1.4, <1.5",
+	"mkdocstrings[python] >=0.20, <0.21",
 ]
 
-[project.scripts]
-timerdo = "timerdo.main:app"
+dev = [
+	"black >=23.1, <23.2",
+	"flake8 >=6.0, <6.1",
+	"isort >=5.12, <5.13",
+]
+
+[tool.black]
+line-length = 79
+target-version = ["py311"]
+skip-string-normalization = true
+
+[tool.isort]
+profile = "black"
