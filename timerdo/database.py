@@ -11,3 +11,8 @@ Base.metadata.create_all(engine)
 def get_session():
     """Returns sql session."""
     return Session(engine)
+
+
+def get_connection():
+    """Returns Connection."""
+    return engine.begin()

@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, date
 from enum import StrEnum
 
 from sqlalchemy import DateTime, ForeignKey, String
@@ -21,6 +21,7 @@ class ToDo(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     task: Mapped[str] = mapped_column(String)
     tag: Mapped[str | None]
+    deadline: Mapped[date | None]
     status: Mapped[Status] = mapped_column(String, default=Status.to_do)
     timestamp: Mapped[datetime] = mapped_column(
         DateTime, default=datetime.utcnow
@@ -41,7 +42,7 @@ class Timer(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     task_id: Mapped[int] = mapped_column(ForeignKey('todo_item.id'))
     start: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
-    end: Mapped[datetime | None]
+    stop: Mapped[datetime | None]
 
     todo: Mapped['ToDo'] = relationship(back_populates='timers')
 
