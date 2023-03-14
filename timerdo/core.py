@@ -3,282 +3,127 @@ from datetime import datetime, date
 
 from pydantic import validate_arguments
 from sqlalchemy import select
+from sqlalchemy.orm import Session
 from sqlalchemy.orm.exc import UnmappedInstanceError, NoResultFound
 from sqlalchemy.exc import OperationalError
 
-from database import get_session, get_connection
-from models import Timer, ToDo, Status
+from .database import connection
+from .models import Timer, ToDo, Status
 
 
-@validate_arguments
+def add_session(model: ToDo | Timer, session: Session) -> None:
+    """Adds new entry to a given table.
+    
+    Args:
+        model (ToDo | Timer): Table model for inserting item.
+        session (Session): SqlAlchemy Session.
+
+    Returns:
+        None: null.
+    """
+    with session.begin() as session:
+        session.add(model)
+    return None
+
+
+def get_session(
+    model: ToDo | Timer, id: int, session: Session
+) -> None | ToDo | Timer:
+    """Gets an entry from a given table and id.
+    
+    Args:
+        model (ToDo | Timer): Table model for inserting item.
+        id (int): Item id.
+        session (Session): SqlAlchemy Session.
+
+    Returns:
+        None | ToDo | Timer: null or entry.
+    """
+    with session() as session:
+        return session.get(model, id)
+
+
 def add_task(
         task: str,
         tag: str | None = None,
         deadline: date | None = None,
-        status: Status = Status.to_do
-) -> ToDo:
-    """Adds a new task to the ToDo table.
+        status: Status = Status.to_do,
+        session: Session = connection,
+) -> bool:
+    """Adds a new task to the todo table.
 
     Args:
         task (str): Descriptive of the task.
         tag (str | None): A tag to be used as filter.
         deadline (date | None): A given deadline or Null.
         status (Status): to_do = 'To Do'; doing = 'Doing'; done = 'Done'
+        session (Session): SqlAlchemy Session.
 
     Returns:
-        ToDo: Added item.
-
-    Raises:
-        ValidationError: Invalid data type.
+        bool: True
     """
-    with get_session() as session:
-        if tag:
-            tag = capwords(tag)
+    if tag:
+        tag = capwords(tag)
+    
+    new_task = ToDo(
+        task=capwords(task),
+        tag=tag,
+        deadline=deadline,
+        status=Status(status),
+    )
 
-        new_task = ToDo(
-            task=capwords(task),
-            tag=tag,
-            deadline=deadline,
-            status=status,
-        )
+    add_session(new_task, session)
 
-        session.add(new_task)
-
-        session.commit()
-        session.refresh(new_task)
-
-        return new_task
+    return True
 
 
-@validate_arguments
-def del_task(task_id: int) -> ToDo:
-    """Deletes a task and all its timers.
-
+def add_timer(task_id: int, session: Session = connection) -> bool:
+    """Adds a new timer to the timer table.
+    
     Args:
-        task_id (int): Task id.
-
-    Returns:
-        ToDo: Deleted item.
-
-    Raises:
-        RuntimeError(f'Task id: {task_id} does not exist.')
-        ValidationError: Invalid data type.
-    """
-    with get_session() as session:
-        try:
-            task = session.get(ToDo, task_id)
-
-            session.delete(task)
-            session.commit()
-            session.flush()
-
-            return task
-        except UnmappedInstanceError:
-            raise RuntimeError(f'Task id: {task_id} does not exist.')
-
-
-@validate_arguments
-def edit_task(
-        task_id: int,
-        task: str | None = None,
-        tag: str | None = None,
-        deadline: date | None = None,
-        status: Status = None,
-) -> ToDo:
-    """Edits task.
-
-    Args:
-        task_id (int): Task id of task to be editable.
-        task (str | None): Descriptive of the task to edit.
-        tag (str | None): A tag to edit.
-        deadline (date | None): A deadline to edit.
-        status: Status to edit.
-
-    Returns:
-        ToDo: Edited item.
-
-    Raises:
-        RuntimeError(f'Task id: {task_id} does not exist.')
-        ValidationError: Invalid data type.
-    """
-    with get_session() as session:
-        try:
-            task_item = session.get(ToDo, task_id)
-            if task:
-                task_item.task = capwords(task)
-            if tag:
-                task_item.tag = capwords(tag)
-            if deadline:
-                task_item.deadline = deadline
-            if status:
-                task_item.status = status
-
-            session.add(task_item)
-            session.commit()
-            session.refresh(task_item)
-
-            return task_item
-
-        except UnmappedInstanceError:
-            raise RuntimeError(f'Task id: {task_id} does not exist.')
-
-
-@validate_arguments
-def start_timer(task_id: int) -> Timer:
-    """Starts timer for a given task.
-
-    Args:
-        task_id (int): Task id of task.
-
-    Returns:
-        Timer: Started timer.
-
-    Raises:
-        RuntimeError(f'Task id: {task_id} already done.')
-        RuntimeError('Timer is running.')
-        RuntimeError(f'Task id: {task_id} does not exist.')
-        ValidationError: Invalid data type.
-    """
-    with get_session() as session:
-        try:
-            task = session.get(ToDo, task_id)
-            if task.status == Status.done:
-                raise RuntimeError(f'Task id: {task_id} already done.')
-            if session.execute(select(Timer).where(Timer.stop == None)).one():
-                raise RuntimeError('Timer is running.')
-
-        except AttributeError:
-            raise RuntimeError(f'Task id: {task_id} does not exist.')
-
-        except NoResultFound:
-            new_timer = Timer(task_id=task_id)
-
-            session.add(new_timer)
-            session.commit()
-            session.refresh(new_timer)
-
-            return new_timer
-
-
-@validate_arguments
-def stop_timer(status: Status = Status.doing) -> Timer:
-    """Stops timer.
-
-    Args:
-        status (Status): task status. 
-
-    Returns:
-        Timer: Stopped timer.
-
-    Raises:
-        RuntimeError('Timer is not running.')
-        ValidationError: Invalid data type.
-    """
-    with get_session() as session:
-        try:
-            timer_item = session.execute(
-                select(Timer).where(Timer.stop == None)
-            ).one()[0]
-
-            task_item = session.get(ToDo, timer_item.task_id)
-
-            timer_item.stop = datetime.utcnow()
-            task_item.status = status
-
-            session.add_all([task_item, timer_item])
-            session.commit()
-            session.refresh(timer_item)
-
-            return timer_item
-        except NoResultFound:
-            raise RuntimeError('Timer is not running.')
-
-
-@validate_arguments
-def del_timer(timer_id: int) -> Timer:
-    """Deletes a timer.
-
-    Args:
-        timer_id (int): Timer id.
-
-    Returns:
-        Timer: Deleted item.
-
-    Raises:
-        RuntimeError(f'Task id: {task_id} does not exist.')
-        ValidationError: Invalid data type.
-    """
-    with get_session() as session:
-        try:
-            timer = session.get(Timer, timer_id)
-
-            session.delete(timer)
-            session.commit()
-            session.flush()
-
-            return timer
-        except UnmappedInstanceError:
-            raise RuntimeError(f'Timer id: {timer_id} does not exist.')
-
-
-@validate_arguments
-def edit_timer(stop: datetime) -> Timer:
-    """Edit a running timer item.
-
-    Args:
-        stop (datetime): Stop time.
-
-    Returns:
-         Timer: Edited timer.
-    """
-    utcdif = datetime.now() - datetime.utcnow()
-    with get_session() as session:
-        timer = session.execute(
-            select(Timer).where(Timer.stop == None)
-            ).one()[0]
-        if timer.start >= (stop -utcdif):
-            raise RuntimeError('Stop must be greater than start.')
-        try:
-            timer.stop = (stop - utcdif)
-
-            session.add(timer)
-            session.commit()
-            session.refresh(timer)
-
-            return timer
-        except NoResultFound:
-            raise RuntimeError('No Running Timer.')
-
-
-@validate_arguments
-def add_timer(task_id: int, start: datetime, stop: datetime) -> Timer:
-    """Adds a timer item.
-    # TODO: It doesn't check whether the item overlay another timeframe of not.
-     
-    Args:
-        task_id (int): Task id of task.
-        Start (datetime): Start time.
-        stop (datetime): Stop time.
+        task_id (int): ToDo item id.
+        session (Session): SqlAlchemy Session.
     
     Returns:
-        Timer: new timer.
+        bool: True
     """
-    utcdif = datetime.now() - datetime.utcnow()
-    if start >= stop:
-            raise RuntimeError('Stop must be greater than start.')
+    try:
+        task = get_session(ToDo, task_id, session)
+        if task.status == Status.done:
+            raise RuntimeError(f"Task {task_id} already done.")
+        if session().execute(
+            select(Timer).where(Timer.finished_at == None)
+        ).first():
+                raise RuntimeError("Timer is already running.")
+        
+        new_timer = Timer(task_id=task_id)
+        task.status = Status.doing
 
-    with get_session() as session:
-        try:
-            task = session.get(ToDo, task_id)
-            new_timer = Timer(
-                task_id=task.id, start=(start - utcdif), stop=(stop - utcdif)
-                )
+        add_session(new_timer, session)
+        add_session(task, session)
+    
+    except AttributeError:
+        raise RuntimeError(f"Task {task_id} does not exist.")
+    
+    return True
 
-            session.add(new_timer)
-            session.commit()
-            session.refresh(new_timer)
 
-            return new_timer
+def finish_timer(session: Session = connection):
+    """"""
+    try:
+        timer = session().execute(
+            select(Timer).where(Timer.finished_at == None)
+        ).one()
 
-        except AttributeError:
-            raise RuntimeError(f'Task id: {task_id} does not exist.')
+        print(timer)
+        timer = get_session(Timer, timer[0].id, session)
+        timer.finished_at = datetime.utcnow()
+
+        add_session(timer, session)
+    
+    except NoResultFound:
+        raise RuntimeError(f"No timer running.")
+    
+    return True
+
+
