@@ -3,14 +3,16 @@
 VPATH = timerdo:test
 
 setup:
-	python -m venv .venv
+	python -m venv .venv && \
+	. .venv/bin/activate && \
 	python -m pip install -U pip flit
 
 install:
+	. .venv/bin/activate && \
 	python -m flit install --symlink --deps all
 
 format:
-	. scripts/format.sh
+	bash scripts/format.sh
 
 tests:
-	. scripts/tests.sh
+	bash scripts/tests.sh

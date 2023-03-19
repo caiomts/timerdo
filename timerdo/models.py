@@ -20,8 +20,8 @@ class Base(
     pass
 
 
-class ToDo(Base):
-    __tablename__ = 'todo'
+class ToDoItem(Base):
+    __tablename__ = 'todo_list'
 
     id = mapped_column(Integer, primary_key=True, init=False)
     task: Mapped[str] = mapped_column(String)
@@ -41,10 +41,10 @@ class ToDo(Base):
 
 
 class Timer(Base):
-    __tablename__ = 'timer'
+    __tablename__ = 'timer_list'
 
     id = mapped_column(Integer, primary_key=True, init=False)
-    task_id: Mapped[int] = mapped_column(ForeignKey('todo.id'))
+    task_id: Mapped[int] = mapped_column(ForeignKey('todo_list.id'))
     created_at: Mapped[datetime] = mapped_column(
         insert_default=datetime.utcnow(), default=None
     )
@@ -52,7 +52,7 @@ class Timer(Base):
         DateTime, default=None
     )
 
-    todo_item: Mapped['ToDo'] = relationship(
+    todo_item: Mapped['ToDoItem'] = relationship(
         back_populates='timers', init=False
     )
 

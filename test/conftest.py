@@ -5,32 +5,42 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from faker import Faker
 
-from timerdo.models import Base, ToDo
+from timerdo.models import Base, ToDoItem, Timer, Status
+from timerdo.database import Connection
 
 fake = Faker()
 
 
 @pytest.fixture(scope='function')
-def connection():
+def tconnection():
     engine = create_engine('sqlite://', echo=True)
     Base.metadata.create_all(engine)
-    session = sessionmaker(engine)
-    yield session
+    yield Connection(engine)
     Base.metadata.drop_all(bind=engine)
 
 
 @pytest.fixture(scope='function')
-def fake_task():
-    yield fake.sentence(nb_words=5)
+def fake_todo_item():
+    return ToDoItem(
+        task=fake.sentence(),
+        tag=fake.word(),
+        deadline=fake.date_between()
+        )
 
 
 @pytest.fixture(scope='function')
-def fake_overdue_date():
-    yield fake.date_between()
+def add_task(tconnection, fake_todo_item):
+    return tconnection.add(fake_todo_item)
 
 
 @pytest.fixture(scope='function')
-def fake_todo_item(fake_task, connection):
-    with connection.begin() as session:
-        session.add(ToDo(task=fake_task))
+def done_task(tconnection, add_task):
+    item = tconnection.get_id(ToDoItem, 1)
+    item.status = Status.done
+    return tconnection.add(item)
+
+
+@pytest.fixture(scope='function')
+def running_timer(tconnection, add_task):
+    return tconnection.add(Timer(task_id=1))
 
