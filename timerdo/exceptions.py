@@ -1,4 +1,3 @@
-
 class TimerdoError(Exception):
     """A base class for Timerdo exceptions."""
 

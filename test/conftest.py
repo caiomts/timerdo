@@ -1,12 +1,9 @@
-from datetime import datetime
-
 import pytest
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
 from faker import Faker
+from sqlalchemy import create_engine
 
-from timerdo.models import Base, ToDoItem, Timer, Status
 from timerdo.database import Connection
+from timerdo.models import Base, Status, Timer, ToDoItem
 
 fake = Faker()
 
@@ -22,10 +19,8 @@ def tconnection():
 @pytest.fixture(scope='function')
 def fake_todo_item():
     return ToDoItem(
-        task=fake.sentence(),
-        tag=fake.word(),
-        deadline=fake.date_between()
-        )
+        task=fake.sentence(), tag=fake.word(), deadline=fake.date_between()
+    )
 
 
 @pytest.fixture(scope='function')
@@ -43,4 +38,3 @@ def done_task(tconnection, add_task):
 @pytest.fixture(scope='function')
 def running_timer(tconnection, add_task):
     return tconnection.add(Timer(task_id=1))
-

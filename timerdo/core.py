@@ -1,33 +1,31 @@
+from datetime import date, datetime
 from string import capwords
-from datetime import datetime, date
 
 from sqlalchemy import select, text
 from sqlalchemy.orm import Session
-from sqlalchemy.orm.exc import UnmappedInstanceError, NoResultFound
-from sqlalchemy.exc import OperationalError
+from sqlalchemy.orm.exc import NoResultFound, UnmappedInstanceError
 
 from .database import Connection, engine
-from .models import Timer, ToDoItem, Status
 from .exceptions import (
-    IdNotFoundError, 
-    RunningTimerError, 
-    DoneTaskError, 
-    NoTimeRunningError, 
-    NoChangingError,
+    DoneTaskError,
+    IdNotFoundError,
     NegativeIntervalError,
+    NoChangingError,
+    NoTimeRunningError,
     OutOffPeriodError,
-    )
-
+    RunningTimerError,
+)
+from .models import Status, Timer, ToDoItem
 
 connection = Connection(engine)
 
 
 def add_task(
-        task: str,
-        tag: str | None = None,
-        deadline: date | None = None,
-        status: Status = Status.to_do,
-        session: Connection = connection,
+    task: str,
+    tag: str | None = None,
+    deadline: date | None = None,
+    status: Status = Status.to_do,
+    session: Connection = connection,
 ) -> bool:
     """Adds a new task to the todo_list table.
 
@@ -43,7 +41,7 @@ def add_task(
     """
     if tag:
         tag = capwords(tag)
-    
+
     new_task = ToDoItem(
         task=capwords(task),
         tag=tag,
@@ -53,14 +51,14 @@ def add_task(
 
     return session.add(new_task)
 
-    
+
 def add_timer(task_id: int, session: Session = connection) -> bool:
     """Adds a new timer to the timer_list table.
-    
+
     Args:
         task_id (int): ToDoItem item id.
         session (Connection): Connection object.
-    
+
     Returns:
         bool: True
     """
@@ -71,14 +69,14 @@ def add_timer(task_id: int, session: Session = connection) -> bool:
         if session.execute(
             select(Timer).where(Timer.finished_at == None)
         ).first():
-                raise RunningTimerError("Timer is already running.")
-        
+            raise RunningTimerError("Timer is already running.")
+
         new_timer = Timer(task_id=task_id)
         task.status = Status.doing
 
         session.add(new_timer)
         return session.add(task)
-    
+
     except AttributeError:
         raise IdNotFoundError(f"Task {task_id} does not exist.")
 
@@ -101,33 +99,31 @@ def finish_timer(session: Session = connection) -> bool:
         timer.finished_at = datetime.utcnow()
 
         return session.add(timer)
-    
+
     except NoResultFound:
-        raise NoTimeRunningError(f"No timer running.")
+        raise NoTimeRunningError("No timer running.")
 
 
 def delete_item(
-    id: int, 
-    model: ToDoItem | Timer, 
-    session: Session = connection
-    ) -> bool:
+    id: int, model: ToDoItem | Timer, session: Session = connection
+) -> bool:
     """Deletes a row from a given table, given an `id`.
 
     Args:
         task_id (int): ToDoItem item id.
         session (Connection): Connection object.
-    
+
     Returns:
         bool: True
     """
     try:
         item = session.get_id(model, id)
-        
+
         return session.delete(item)
     except UnmappedInstanceError:
         raise IdNotFoundError(
             f"Item {id} from {model.__tablename__} does not exist."
-            )
+        )
 
 
 def edit_todo_item(
@@ -136,8 +132,8 @@ def edit_todo_item(
     tag: str | None = None,
     deadline: date | None = None,
     status: Status | None = None,
-    session: Connection = connection
-    ) -> bool:
+    session: Connection = connection,
+) -> bool:
     """Edits a todo item.
 
     Args:
@@ -166,17 +162,15 @@ def edit_todo_item(
         return session.add(item)
 
     except UnmappedInstanceError:
-        raise IdNotFoundError(
-            f"Item {id} does not exist."
-            )
+        raise IdNotFoundError(f"Item {id} does not exist.")
 
 
 def edit_timer_item(
     id: int,
     created_at: datetime | None = None,
     finished_at: datetime | None = None,
-    session: Connection = connection
-    ) -> bool:
+    session: Connection = connection,
+) -> bool:
     """Edits a timer item given an `id`.
 
     Args:
@@ -210,27 +204,21 @@ def edit_timer_item(
             case datetime(), datetime():
                 item.created_at = created_at + diff
                 item.finished_at = finished_at + diff
-        
+
         if item.created_at >= item.finished_at:
             raise NegativeIntervalError(
                 "created_at is greater than finished_at"
-                )
-        
+            )
+
         if finished_at >= datetime.now():
             raise OutOffPeriodError("finished_at is greater than now.")
 
         return session.add(item)
 
     except AttributeError:
-        raise IdNotFoundError(
-            f"Item {id} does not exist."
-            )    
+        raise IdNotFoundError(f"Item {id} does not exist.")
 
 
 def select_all(session: Connection = connection):
     """"""
     return session.execute(text('SELECT * FROM todo_list')).all()
-        
-
-
-

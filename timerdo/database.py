@@ -1,6 +1,6 @@
-from pathlib import Path
-import sys
 import os
+import sys
+from pathlib import Path
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
@@ -10,6 +10,7 @@ from .models import Base
 
 class Connection:
     """Class with CRUD sections to comunicate with the database."""
+
     def __init__(self, engine):
         self.engine = engine
         self._session = sessionmaker(self.engine)

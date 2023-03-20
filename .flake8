@@ -1,5 +1,6 @@
 [Flake8]
 max-line-length = 79
-extend-ignore = E203, E712
+ignore = E203,E711,E712
 exclude =
     __init__.py
+max-complexity = 10

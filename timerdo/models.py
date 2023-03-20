@@ -1,9 +1,13 @@
-from datetime import datetime, date
+from datetime import date, datetime
 from enum import StrEnum
 
-from sqlalchemy import DateTime, ForeignKey, String, Date, func, Integer
+from sqlalchemy import Date, DateTime, ForeignKey, Integer, String
 from sqlalchemy.orm import (
-    DeclarativeBase, Mapped, mapped_column, MappedAsDataclass, relationship
+    DeclarativeBase,
+    Mapped,
+    MappedAsDataclass,
+    mapped_column,
+    relationship,
 )
 
 
@@ -33,10 +37,10 @@ class ToDoItem(Base):
     )
 
     timers: Mapped[list['Timer']] = relationship(
-        back_populates='todo_item', 
-        cascade='all, delete-orphan', 
+        back_populates='todo_item',
+        cascade='all, delete-orphan',
         default_factory=list,
-        init=False
+        init=False,
     )
 
 
@@ -55,4 +59,3 @@ class Timer(Base):
     todo_item: Mapped['ToDoItem'] = relationship(
         back_populates='timers', init=False
     )
-
