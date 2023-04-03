@@ -19,7 +19,7 @@ def get_user_dir(dir_data: bool = True) -> Path:
             if dir_data is True:
                 return Path(home, '.local/share')
             else:
-                return Path(home, '.config') 
+                return Path(home, '.config')
         case _, _:
             return Path(os.environ['TIMERDOTEST']) / 'TimerdoTest'
 

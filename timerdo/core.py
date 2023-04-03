@@ -221,8 +221,7 @@ def edit_timer_item(
 
 
 def query_with_text(
-    qtext: str = 'SELECT * FROM todo_list', 
-    session: Connection = connection
-    ) -> list:
+    qtext: str = 'SELECT * FROM todo_list', session: Connection = connection
+) -> list:
     """Query all rows and columns from todo_list."""
     return session.execute(text(qtext)).all()
