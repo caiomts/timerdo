@@ -12,6 +12,8 @@ from sqlalchemy.orm import (
 
 
 class Status(StrEnum):
+    """Status class."""
+
     to_do = 'To Do'
     doing = 'Doing'
     done = 'Done'
@@ -21,10 +23,14 @@ class Base(
     MappedAsDataclass,
     DeclarativeBase,
 ):
+    """Base class for models."""
+
     pass
 
 
 class ToDoItem(Base):
+    """Todo Item class."""
+
     __tablename__ = 'todo_list'
 
     id = mapped_column(Integer, primary_key=True, init=False)
@@ -45,6 +51,8 @@ class ToDoItem(Base):
 
 
 class Timer(Base):
+    """Timer item class."""
+
     __tablename__ = 'timer_list'
 
     id = mapped_column(Integer, primary_key=True, init=False)

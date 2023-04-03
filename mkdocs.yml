@@ -1,0 +1,53 @@
+site_name: Timerdo
+repo_url: https://github.com/caiomts/timerdo
+repo_name: caiomts/timerdo
+edit_uri: edit/master/docs/
+copyright: By Caio Mescouto
+
+theme:
+  name: material
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: grey
+      accent: teal
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to dark mode
+    
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: blue grey
+      accent: teal
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to dark mode
+
+  features:
+    - navigation.tabs
+    - navigation.tracking
+    - navigation.sections
+    - toc.integrate
+    - navigation.top
+    - search.suggest
+    - search.share
+    - header.autohide
+    - navigation.footer
+    - content.action.edit
+    - content.action.view
+
+plugins:
+  - search
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/caiomts
+      name: github.com/caiomts
+
+    - icon: fontawesome/brands/linkedin
+      link: https://www.linkedin.com/in/caiomts/
+      name: in/caiomts/
+
+extra_css:
+  - stylesheets/extra.css

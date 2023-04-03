@@ -1,7 +1,5 @@
 #!/usr/bin/env bash
 
-set -x
-
 PREFIX=''
 
 [[ -z "$GITHUB_ACTIONS" ]] && PREFIX='.venv/bin/' && python -m venv .venv 

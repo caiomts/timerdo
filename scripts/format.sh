@@ -1,14 +1,12 @@
 #!/usr/bin/env bash
 
+set -e
+
 PREFIX=''
 
-[[ -d .venv ]] && PREFIX='.venv/bin/' && python -m venv .venv
+[[ -d .venv ]] && PREFIX='.venv/bin/'
 
-${PREFIX}python -m flake8 \
-    --extend-ignore=E203,E711,E712 \
-    --max-line-length=79 \
-    --exclude=__init__.py \
-    --max-complexity=10 \
-    timerdo test
-${PREFIX}python -m isort timerdo test
-${PREFIX}python -m black timerdo test
+${PREFIX}python -m flake8 timerdo/ test/
+${PREFIX}python -m isort timerdo/ test/
+${PREFIX}python -m pydocstyle timerdo/
+${PREFIX}python -m black timerdo/ test/

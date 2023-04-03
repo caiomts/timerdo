@@ -10,3 +10,6 @@ format:
 
 tests:
 	bash scripts/tests.sh
+
+docs:
+	bash scripts/docs_preview.sh

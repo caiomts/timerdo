@@ -1,5 +1,6 @@
 from datetime import date, datetime
 from string import capwords
+from typing import NoReturn
 
 from sqlalchemy import select, text
 from sqlalchemy.orm import Session
@@ -26,8 +27,8 @@ def add_task(
     deadline: date | None = None,
     status: Status = Status.to_do,
     session: Connection = connection,
-) -> bool:
-    """Adds a new task to the todo_list table.
+) -> NoReturn:
+    """Add a new task to the todo_list table.
 
     Args:
         task (str): Descriptive of the task.
@@ -52,8 +53,8 @@ def add_task(
     return session.add(new_task)
 
 
-def add_timer(task_id: int, session: Session = connection) -> bool:
-    """Adds a new timer to the timer_list table.
+def add_timer(task_id: int, session: Session = connection) -> NoReturn:
+    """Add a new timer to the timer_list table.
 
     Args:
         task_id (int): ToDoItem item id.
@@ -67,7 +68,7 @@ def add_timer(task_id: int, session: Session = connection) -> bool:
         if task.status == Status.done:
             raise DoneTaskError(f"Task {task_id} already done.")
         if session.execute(
-            select(Timer).where(Timer.finished_at == None)
+            select(Timer).where(Timer.finished_at == None)  # noqa
         ).first():
             raise RunningTimerError("Timer is already running.")
 
@@ -81,7 +82,7 @@ def add_timer(task_id: int, session: Session = connection) -> bool:
         raise IdNotFoundError(f"Task {task_id} does not exist.")
 
 
-def finish_timer(session: Session = connection) -> bool:
+def finish_timer(session: Session = connection) -> NoReturn:
     """Add `finished_at` to the last timer_list table row when it is `None`.
 
     Args:
@@ -92,7 +93,7 @@ def finish_timer(session: Session = connection) -> bool:
     """
     try:
         timer = session.execute(
-            select(Timer).where(Timer.finished_at == None)
+            select(Timer).where(Timer.finished_at == None)  # noqa
         ).one()[0]
 
         timer = session.get_id(Timer, timer.id)
@@ -106,8 +107,8 @@ def finish_timer(session: Session = connection) -> bool:
 
 def delete_item(
     id: int, model: ToDoItem | Timer, session: Session = connection
-) -> bool:
-    """Deletes a row from a given table, given an `id`.
+) -> NoReturn:
+    """Delete a row from a given table, given an `id`.
 
     Args:
         task_id (int): ToDoItem item id.
@@ -133,8 +134,8 @@ def edit_todo_item(
     deadline: date | None = None,
     status: Status | None = None,
     session: Connection = connection,
-) -> bool:
-    """Edits a todo item.
+) -> NoReturn:
+    """Edit a todo item.
 
     Args:
         id (int): ToDoItem item id.
@@ -170,8 +171,8 @@ def edit_timer_item(
     created_at: datetime | None = None,
     finished_at: datetime | None = None,
     session: Connection = connection,
-) -> bool:
-    """Edits a timer item given an `id`.
+) -> NoReturn:
+    """Edit a timer item given an `id`.
 
     Args:
         id (int): Timer item id.
@@ -184,7 +185,7 @@ def edit_timer_item(
     """
     try:
         if session.execute(
-            select(Timer).where(Timer.finished_at == None)
+            select(Timer).where(Timer.finished_at == None)  # noqa
         ).first():
             raise RunningTimerError("Timer is already running.")
 
@@ -219,6 +220,9 @@ def edit_timer_item(
         raise IdNotFoundError(f"Item {id} does not exist.")
 
 
-def select_all(session: Connection = connection):
-    """"""
-    return session.execute(text('SELECT * FROM todo_list')).all()
+def query_with_text(
+    qtext: str = 'SELECT * FROM todo_list', 
+    session: Connection = connection
+    ) -> list:
+    """Query all rows and columns from todo_list."""
+    return session.execute(text(qtext)).all()

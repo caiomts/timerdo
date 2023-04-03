@@ -1,3 +1,6 @@
+from pathlib import Path
+from shutil import rmtree
+
 import pytest
 from faker import Faker
 from sqlalchemy import create_engine
@@ -38,3 +41,8 @@ def done_task(tconnection, add_task):
 @pytest.fixture(scope='function')
 def running_timer(tconnection, add_task):
     return tconnection.add(Timer(task_id=1))
+
+
+@pytest.fixture(scope='function')
+def delete_test():
+    rmtree(Path('./TimerdoTest'))

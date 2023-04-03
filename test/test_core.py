@@ -12,6 +12,7 @@ from timerdo.core import (
     edit_timer_item,
     edit_todo_item,
     finish_timer,
+    query_with_text,
 )
 from timerdo.exceptions import (
     DoneTaskError,
@@ -209,3 +210,8 @@ def test_edit_timer_no_finished_gt_now(tconnection, running_timer):
 def test_edit_timer_wrong_id(tconnection):
     with pytest.raises(IdNotFoundError):
         edit_timer_item(2, finished_at=datetime.now(), session=tconnection)
+
+
+def test_select_all(tconnection, running_timer):
+    item = tconnection.get_id(ToDoItem, 1)
+    assert query_with_text(session=tconnection)[0][1] == item.task
