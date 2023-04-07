@@ -2,31 +2,29 @@ site_name: Timerdo
 repo_url: https://github.com/caiomts/timerdo
 repo_name: caiomts/timerdo
 edit_uri: edit/master/docs/
-copyright: By Caio Mescouto
 
 theme:
   name: material
+  logo: img/favicon.png
+  favicon: img/favicon.png
   palette:
-    - media: "(prefers-color-scheme: light)"
-      scheme: default
-      primary: grey
-      accent: teal
+    - scheme: default
+      primary: deep orange
+      accent: deep purple
       toggle:
-        icon: material/weather-sunny
+        icon: material/weather-night
         name: Switch to dark mode
-    
-    - media: "(prefers-color-scheme: dark)"
-      scheme: slate
-      primary: blue grey
+
+    - scheme: slate
+      primary: deep purple
       accent: teal
       toggle:
         icon: material/weather-sunny
         name: Switch to dark mode
 
   features:
-    - navigation.tabs
     - navigation.tracking
-    - navigation.sections
+    - toc.follow
     - toc.integrate
     - navigation.top
     - search.suggest
@@ -36,8 +34,47 @@ theme:
     - content.action.edit
     - content.action.view
 
+markdown_extensions:
+  - attr_list
+  - md_in_html
+  - abbr
+  - admonition
+  - footnotes
+  - tables
+  - toc:
+      permalink: true
+  - pymdownx.emoji:
+      emoji_index: !!python/name:materialx.emoji.twemoji
+      emoji_generator: !!python/name:materialx.emoji.to_svg
+  - pymdownx.snippets:
+      auto_append:
+        - includes/abbreviations.md
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+      use_pygments: true
+  - pymdownx.tasklist:
+      custom_checkbox: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences
+  - pymdownx.critic
+  - pymdownx.caret
+  - pymdownx.keys
+  - pymdownx.mark
+  - pymdownx.tilde
+  - pymdownx.betterem
+  - pymdownx.details
+  - pymdownx.superfences
+
+
 plugins:
   - search
+  - tags
+  - git-revision-date-localized:
+      enable_creation_date: true
+      fallback_to_build_date: true
 
 extra:
   social:
@@ -48,6 +85,19 @@ extra:
     - icon: fontawesome/brands/linkedin
       link: https://www.linkedin.com/in/caiomts/
       name: in/caiomts/
+
+    - icon: material/web
+      link: https://caiomts.github.io/
+      name: caiomts.github.io
+
+nav:
+  - Home: index.md
+  - Tutorials: tutorials.md
+  - How-to guides: how_to_guides.md
+  - Reference CLI: ref_cli.md
+  - Reference API: ref_api.md
+  - Releases: releases.md
+  - About: about.md
 
 extra_css:
   - stylesheets/extra.css

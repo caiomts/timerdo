@@ -2,6 +2,9 @@
 
 PREFIX=''
 
-[[ -d .venv ]] && PREFIX='.venv/bin/'
+[[ -z "$GITHUB_ACTIONS" ]] || ${PREFIX}mkdocs gh-deploy --force
+
+
+
 
 

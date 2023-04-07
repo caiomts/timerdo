@@ -13,7 +13,7 @@ def test_callback():
     result = runner.invoke(
         app,
     )
-    assert f'Timerdo Version: {__version__}' in result.stdout
+    assert f'timerdo Version: {__version__}' in result.stdout
 
 
 def test_task():
@@ -39,6 +39,25 @@ def test_start():
 def test_stop():
     result = runner.invoke(app, ['stop'])
     assert result.exit_code == 0
+
+
+def test_edit_task():
+    result = runner.invoke(
+        app, ['edit', 'task', '1', '--task', f'{fake.sentence()}']
+    )
+    assert result.exit_code == 0
+
+
+def test_edit_timer():
+    result = runner.invoke(
+        app, ['edit', 'timer', '1', '-c', f'{fake.date_time()}']
+    )
+    assert result.exit_code == 0
+
+
+def test_query_sql():
+    result = runner.invoke(app, ['query', 'sql'])
+    assert '[' in result.stdout
 
 
 def test_delete_timer():
