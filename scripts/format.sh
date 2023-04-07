@@ -4,10 +4,10 @@ set -e
 
 PREFIX=''
 
-[[ -d .venv ]] && PREFIX='.venv/bin/'
-[[ ./docs/cli_reference.md -nt ./timerdo/main.py ]] || ( 
-    echo "CLI ref is outdated" && bash scripts/docs_preview.sh && exit 1 
-    )
+[[ -d .venv ]] && ( 
+    PREFIX='.venv/bin/' && [[ ./docs/cli_reference.md -nt ./timerdo/main.py ]] || ( 
+    echo "CLI ref is outdated" && exit 1 ) 
+)
 
 ${PREFIX}python -m black timerdo/ test/
 ${PREFIX}python -m pydocstyle timerdo/
