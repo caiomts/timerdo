@@ -23,8 +23,8 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
       - name: Bootstrap
-        run: ./scripts/bootstrap.sh
+        run: . ./scripts/bootstrap.sh
       - name: format
-        run: ./scripts/format.sh
+        run: . ./scripts/format.sh
       - name: Tests
-        run: ./cripts/tests.sh
+        run: . ./cripts/tests.sh
