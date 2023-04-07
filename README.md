@@ -22,11 +22,11 @@ Timerdo is an intuitive CLI application that will help you focus on what really 
 ---
 ## Requirements
 
-Python 3.10+
+Python 3.11+
 
 No fear of the command-line interface :laughing:.
 
---
+---
 
 **Source Code:** https://github.com/caiomts/timerdo  
 
@@ -34,7 +34,7 @@ No fear of the command-line interface :laughing:.
 
 :warning: Early stage project[^2]
 
---
+---
 
 ## Getting started
 

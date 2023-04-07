@@ -9,7 +9,7 @@ Timerdo is an intuitive CLI application that will help you focus on what really 
 ---
 ## Requirements
 
-Python 3.10+
+Python 3.11+
 
 No fear of the command-line interface :laughing:.
 

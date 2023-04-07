@@ -6,7 +6,7 @@ build-backend = "flit_core.buildapi"
 name = "timerdo"
 authors = [{name = "Caio Mescouto Terra de Souza", email = "caiomescouto@gmail.com"}]
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 dynamic = ["version", "description"]
 dependencies = [
     "sqlalchemy >=2.0.4, <2.1",
