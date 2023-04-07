@@ -10,6 +10,9 @@
     <a href="https://github.com/caiomts/timerdo/actions?query=workflow%3ADocs" targe>
     <img src="https://github.com/caiomts/timerdo/actions/workflows/publish_docs.yml/badge.svg" alt="Docs">
 </a>
+<a href="https://github.com/caiomts/timerdo/actions?query=workflow%3APublish" targe>
+    <img src="https://github.com/caiomts/timerdo/actions/workflows/publish_pypi.yml/badge.svg" alt="Docs">
+</a>
 <a href="https://pypi.org/project/timerdo/">
     <img src="https://badge.fury.io/py/timerdo.svg" alt="Package version">
 </a>

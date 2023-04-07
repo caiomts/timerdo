@@ -112,8 +112,43 @@ None),
     |1|Team Eight Group Receive Even Option Investment|Moon|2023-03-01|Doing|1|
 
 
-If you already have your Timerdo installed and are wondering how to do things, my suggestion is to go directly to the [How-to guides](/how_to_guides/) section.
+## Next steps
 
+If you already have your Timerdo installed and are wondering how to do things, 
+I have two suggestions.
+
+1. Go directly to the [CLI reference](cli_reference.md) section.
+
+2. Call for --Help :laughing:
+
+```shell
+$ timerdo --help
+                                                                       
+ Usage: timerdo [OPTIONS] COMMAND [ARGS]...                            
+                                                                       
+ Timerdo is a minimalist to-do list with built-in timer to keep your   
+ tasks on track.                                                       
+                                                                       
+╭─ Options ───────────────────────────────────────────────────────────╮
+│ --install-completion          Install completion for the current    │
+│                               shell.                                │
+│ --show-completion             Show completion for the current       │
+│                               shell, to copy it or customize the    │
+│                               installation.                         │
+│ --help                        Show this message and exit.           │
+╰─────────────────────────────────────────────────────────────────────╯
+╭─ Commands ──────────────────────────────────────────────────────────╮
+│ delete      Delete item, given table and item id.                   │
+│ edit        Edit task or timer entries.                             │
+│ query       Query the data.                                         │
+│ start       Start timer.                                            │
+│ stop        Stop running timer.                                     │
+│ task        Add a task to the To-Do list.                           │
+╰─────────────────────────────────────────────────────────────────────╯
+
+```
+
+If you're stuck installing Python, just move on to the next section.
 
 [tutorial]:tutorials.md
 [pipx]:https://pypa.github.io/pipx/

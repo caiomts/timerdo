@@ -3,6 +3,21 @@ repo_url: https://github.com/caiomts/timerdo
 repo_name: caiomts/timerdo
 edit_uri: edit/master/docs/
 
+nav:
+  - Home: 
+      - index.md
+  - Tutorials: 
+      - tutorials.md
+  - "CLI Reference":
+      - cli_reference.md
+  - "API Reference": 
+      - api.md
+  - "Release Notes": 
+      - releases.md
+  - About: 
+      - about.md
+
+
 theme:
   name: material
   logo: img/favicon.png
@@ -89,15 +104,6 @@ extra:
     - icon: material/web
       link: https://caiomts.github.io/
       name: caiomts.github.io
-
-nav:
-  - Home: index.md
-  - Tutorials: tutorials.md
-  - How-to guides: how_to_guides.md
-  - Reference CLI: ref_cli.md
-  - Reference API: ref_api.md
-  - Releases: releases.md
-  - About: about.md
 
 extra_css:
   - stylesheets/extra.css
