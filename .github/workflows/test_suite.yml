@@ -27,4 +27,4 @@ jobs:
       - name: format
         run: . ./scripts/format.sh
       - name: Tests
-        run: . ./cripts/tests.sh
+        run: . ./scripts/tests.sh
