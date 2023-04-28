@@ -13,7 +13,7 @@ Python 3.11+
 
 No fear of the command-line interface :laughing:.
 
---
+---
 
 **Source Code:** https://github.com/caiomts/timerdo  
 
@@ -24,7 +24,7 @@ No fear of the command-line interface :laughing:.
 ---
 
 ## Getting started
-Timerdo is a CLI application 100% written in Python. So, if you're a Python user, you can easily install Timerdo with `pip[x]`. If you not, don't be afraid, follow along with the [tutorial] and start using python :partying_face:.
+Timerdo is a CLI application 100% written in Python. So, if you're a Python user, you can easily install Timerdo with `pip[x]`.
 
 ### Install Timerdo
 
@@ -59,7 +59,7 @@ If your output is similar to the one highlighted above, you're good :rocket:.
 ```shell
 $ timerdo task "<your task goes here>"
 ```
-No return. No problem :smile:.
+No return. No problem.
 
 ### Starting the timer
 
@@ -147,8 +147,6 @@ $ timerdo --help
 ╰─────────────────────────────────────────────────────────────────────╯
 
 ```
-
-If you're stuck installing Python, just move on to the next section.
 
 [tutorial]:tutorials.md
 [pipx]:https://pypa.github.io/pipx/

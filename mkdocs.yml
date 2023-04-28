@@ -6,19 +6,13 @@ edit_uri: edit/master/docs/
 nav:
   - Home: 
       - index.md
-  - Tutorials: 
-      - tutorials.md
   - "CLI Reference":
       - cli_reference.md
-  - "API Reference": 
-      - api.md
-  - "Release Notes": 
-      - releases.md
-  - About: 
-      - about.md
 
 
 theme:
+  features:
+    - content.tabs.link
   name: material
   logo: img/favicon.png
   favicon: img/favicon.png
@@ -71,6 +65,8 @@ markdown_extensions:
       use_pygments: true
   - pymdownx.tasklist:
       custom_checkbox: true
+  - pymdownx.tabbed:
+      alternate_style: true
   - pymdownx.inlinehilite
   - pymdownx.snippets
   - pymdownx.superfences
@@ -83,13 +79,9 @@ markdown_extensions:
   - pymdownx.details
   - pymdownx.superfences
 
-
 plugins:
   - search
   - tags
-  - git-revision-date-localized:
-      enable_creation_date: true
-      fallback_to_build_date: true
 
 extra:
   social:
