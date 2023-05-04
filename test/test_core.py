@@ -117,6 +117,7 @@ def test_edit_todo_item_wrong_id(tconnection):
         edit_todo_item(1, session=tconnection)
         assert e.value.code == 1
 
+
 def test_edit_todo_item(tconnection, add_task):
     fake = Faker()
     task = fake.sentence()
@@ -158,6 +159,7 @@ def test_edit_timer_running_timer(tconnection, running_timer):
     with pytest.raises(SystemExit) as e:
         edit_timer_item(1, session=tconnection)
         assert e.value.code == 1
+
 
 def test_edit_timer_no_change_timer(tconnection, running_timer):
     finish_timer(done=False, session=tconnection)

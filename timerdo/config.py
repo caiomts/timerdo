@@ -11,7 +11,7 @@ def get_user_dir(dir_data: bool = True) -> Path:
         case 'Windows', '':
             if os.getenv('APPDATA'):
                 return Path(os.getenv('APPDATA'))
-            else: 
+            else:
                 return Path(os.getenv('LOCALAPPDATA'))
         case 'Darwin', '':
             return Path(home, 'Library')

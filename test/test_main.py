@@ -80,39 +80,33 @@ def test_delete_task():
 def test_report():
     result = runner.invoke(
         app, ['report', '--order-by', 'test', '--tags', 'test']
-        )
+    )
     assert f'from 1789-07-14 until {datetime.now().date()}' in result.stdout
 
 
 def test_report_date():
     result = runner.invoke(
         app, ['report', '--init', '1988-10-10', '--end', '2022-10-10']
-        )
+    )
     assert f'from 1988-10-10 until 2022-10-10' in result.stdout
 
 
 def test_report_date_init():
-    result = runner.invoke(
-        app, ['report', '--init', '1988-10-10']
-        )
+    result = runner.invoke(app, ['report', '--init', '1988-10-10'])
     assert f'from 1988-10-10 until {datetime.now().date()}' in result.stdout
 
 
 def test_report_date_end():
-    result = runner.invoke(
-        app, ['report', '--end', '1988-10-10']
-        )
+    result = runner.invoke(app, ['report', '--end', '1988-10-10'])
     assert f'from 1789-07-14 until 1988-10-10' in result.stdout
 
 
 def test_report_date_error():
     result = runner.invoke(
         app, ['report', '--end', '1400-10-10', '--init', '1988-10-10']
-        )
+    )
     assert result.exit_code == 1
 
 
 def test_delete_test(delete_test):
     pass
-
-

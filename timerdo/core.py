@@ -31,6 +31,7 @@ connection = Connection(engine)
 
 def exception_handler(func):
     """Handle exceptions with a prittyprint."""
+
     def wrapper(*args, **kwargs):
         """Wrapper decorated function."""
         try:
@@ -39,6 +40,7 @@ def exception_handler(func):
             print(f"[bold red]:boom-emoji: {ex}[/bold red]")
             sys.exit(1)
         return result
+
     return wrapper
 
 
@@ -122,7 +124,7 @@ def finish_timer(done: bool, session: Session = connection) -> NoReturn:
 
         timer = session.get_id(Timer, timer.id)
         timer.finished_at = datetime.utcnow()
-        
+
         if done is True:
             task_id = timer.task_id
             item = session.get_id(ToDoItem, task_id)

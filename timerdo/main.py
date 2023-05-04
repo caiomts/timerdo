@@ -26,7 +26,6 @@ edit_app = typer.Typer(help="Edit task or timer entries.")
 app.add_typer(edit_app, name="edit")
 
 
-
 class Table(StrEnum):
     """Status class."""
 
@@ -89,8 +88,8 @@ def start_timer(
 def stop_timer(
     done: bool = typer.Option(
         ..., '--done', '-d', prompt=True, help="Set the task to Done."
-        )
-    ) -> NoReturn:
+    )
+) -> NoReturn:
     """Stop running timer."""
     finish_timer(done=done)
 
