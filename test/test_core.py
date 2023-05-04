@@ -14,15 +14,6 @@ from timerdo.core import (
     finish_timer,
     query_with_text,
 )
-from timerdo.exceptions import (
-    DoneTaskError,
-    IdNotFoundError,
-    NegativeIntervalError,
-    NoChangingError,
-    NoTimeRunningError,
-    OutOffPeriodError,
-    RunningTimerError,
-)
 from timerdo.models import Status, Timer, ToDoItem
 
 
@@ -225,7 +216,6 @@ def test_edit_timer_wrong_id(tconnection):
 
 
 def test_select_all(tconnection, running_timer):
-    item = tconnection.get_id(ToDoItem, 1)
     script = """SELECT * FROM todo_list"""
     result = query_with_text(script, session=tconnection)
     assert '{' in result

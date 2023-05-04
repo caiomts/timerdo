@@ -88,7 +88,7 @@ def test_report_date():
     result = runner.invoke(
         app, ['report', '--init', '1988-10-10', '--end', '2022-10-10']
     )
-    assert f'from 1988-10-10 until 2022-10-10' in result.stdout
+    assert 'from 1988-10-10 until 2022-10-10' in result.stdout
 
 
 def test_report_date_init():
@@ -98,7 +98,7 @@ def test_report_date_init():
 
 def test_report_date_end():
     result = runner.invoke(app, ['report', '--end', '1988-10-10'])
-    assert f'from 1789-07-14 until 1988-10-10' in result.stdout
+    assert 'from 1789-07-14 until 1988-10-10' in result.stdout
 
 
 def test_report_date_error():

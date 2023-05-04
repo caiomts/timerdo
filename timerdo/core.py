@@ -1,5 +1,5 @@
-import sys
 import json
+import sys
 from datetime import date, datetime
 from itertools import chain
 from string import capwords
@@ -33,7 +33,7 @@ def exception_handler(func):
     """Handle exceptions with a prittyprint."""
 
     def wrapper(*args, **kwargs):
-        """Wrapper decorated function."""
+        """Wrap decorated function."""
         try:
             result = func(*args, **kwargs)
         except Exception as ex:
