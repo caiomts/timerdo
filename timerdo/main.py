@@ -3,7 +3,8 @@ from enum import StrEnum
 from typing import NoReturn, Optional
 
 import typer
-from rich import print
+from rich import box, print, print_json
+from rich.panel import Panel
 
 from .__init__ import __version__
 from .core import (
@@ -13,16 +14,17 @@ from .core import (
     edit_timer_item,
     edit_todo_item,
     finish_timer,
+    list_tasks_with_time,
+    print_report,
     query_with_text,
 )
 from .models import Status, Timer, ToDoItem
 
 app = typer.Typer()
 edit_app = typer.Typer(help="Edit task or timer entries.")
-query_app = typer.Typer(help="Query the data.")
 
 app.add_typer(edit_app, name="edit")
-app.add_typer(query_app, name="query")
+
 
 
 class Table(StrEnum):
@@ -33,18 +35,36 @@ class Table(StrEnum):
 
 
 @app.callback(invoke_without_command=True)
-def version_callback(ctx: typer.Context) -> NoReturn:  # noqa: D205,D400,D415
-    """Timerdo is a minimalist to-do list with built-in timer
-    to keep your tasks on track.
-    """
-    if ctx.invoked_subcommand is None:
-        print(f"timerdo Version: {__version__}")
+def version_callback(
+    ctx: typer.Context,
+    version: bool = typer.Option(
+        False, "--version", "-v", help='Print version.'
+    ),
+) -> NoReturn:  # noqa: D205,D400,D415
+    """Timerdo is a minimalist to-do list with built-in \
+timer to keep your tasks on track."""
+    if ctx.invoked_subcommand is None and version is False:
+        print(
+            Panel(
+                """
+[green]Timerdo is a minimalist to-do list with built-in \
+timer to keep your tasks on track.[/green]
+
+To get started call `$ timerdo --help` or read the documentation at \
+https://caiomts.github.io/timerdo/
+""",
+                box=box.ROUNDED,
+                border_style='bold bright_black',
+            )
+        )
+    if version is True:
+        print(f"Timerdo version: {__version__}")
 
 
-@app.command()
-def task(
+@app.command("task")
+def new_task(
     task: str = typer.Argument(..., help="Task to be add to To-Do list."),
-    tag: Optional[str] = typer.Option(None, "--tag", help="Task tag."),
+    tag: Optional[str] = typer.Option(None, "--tag", "-t", help="Task tag."),
     deadline: Optional[datetime] = typer.Option(
         None, "--deadline", "-d", help="Task Deadline.", formats=["%Y-%m-%d"]
     ),
@@ -57,22 +77,26 @@ def task(
     add_task(task=task, tag=tag, deadline=deadline, status=status)
 
 
-@app.command()
-def start(
+@app.command("start")
+def start_timer(
     task_id: int = typer.Argument(..., help="task id for timing.")
 ) -> NoReturn:
     """Start timer."""
     add_timer(task_id=task_id)
 
 
-@app.command()
-def stop() -> NoReturn:
+@app.command("stop")
+def stop_timer(
+    done: bool = typer.Option(
+        ..., '--done', '-d', prompt=True, help="Set the task to Done."
+        )
+    ) -> NoReturn:
     """Stop running timer."""
-    finish_timer()
+    finish_timer(done=done)
 
 
-@app.command()
-def delete(
+@app.command("delete")
+def delete_item_from_table(
     table: Table = typer.Argument(..., help="Table containing the item."),
     id: int = typer.Argument(..., help="Item id."),
 ) -> NoReturn:
@@ -82,6 +106,53 @@ def delete(
             delete_item(id=id, model=ToDoItem)
         case 'timer':
             delete_item(id=id, model=Timer)
+
+
+@app.command("report")
+def report_tasks(
+    status: bool = typer.Option(
+        False, "--done", "-d", help="Return also tasks with Done status."
+    ),
+    tags: Optional[list[str]] = typer.Option(
+        None, "--tags", "-t", help="Filter tags."
+    ),
+    init: Optional[datetime] = typer.Option(
+        None,
+        "--init",
+        "-i",
+        help="Timeframe's lower boundary.",
+        formats=["%Y-%m-%d"],
+    ),
+    end: Optional[datetime] = typer.Option(
+        None,
+        "--end",
+        "-e",
+        help="Timeframe's upper boundary.",
+        formats=["%Y-%m-%d"],
+    ),
+    order_by: Optional[str] = typer.Option(
+        None, "--order-by", "-o", help="Column to order by."
+    ),
+    asc: bool = typer.Option(
+        False,
+        "--asc",
+        "-a",
+        help="If ordered by it will be in ascending order.",
+    ),
+) -> NoReturn:
+    """Print reports."""
+    print_report(
+        list_tasks_with_time(
+            status=status,
+            tags=tags,
+            init=init,
+            end=end,
+            order_by=order_by,
+            asc=asc,
+        ),
+        init=init,
+        end=end,
+    )
 
 
 @edit_app.command("task")
@@ -122,21 +193,9 @@ def edit_timer(
     edit_timer_item(id=id, created_at=created_at, finished_at=finished_at)
 
 
-@query_app.command("sql")
+@app.command("query")
 def query_sql(
-    sql: str = typer.Argument(
-        """
-        SELECT td.id, task, tag, deadline, status, sum(
-            strftime('%M', finished_at) - strftime('%M', tl.created_at)
-            ) as time
-        FROM todo_list as td
-        LEFT OUTER JOIN timer_list as tl
-        ON tl.task_id = td.id
-        GROUP BY td.id, task, tag, deadline, status
-        ORDER BY deadline ASC
-        """,
-        help="Item id.",
-    )
+    script: str = typer.Argument(..., help="sql script.")
 ) -> NoReturn:
-    """Query the data with sql."""
-    print(query_with_text(qtext=sql))
+    """Query the data with sql script and return a json."""
+    print_json(query_with_text(script=script))

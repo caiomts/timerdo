@@ -39,6 +39,8 @@ No fear of the command-line interface :laughing:.
 
 ---
 
+![timerdo_report](docs/img/screenshot_timerdo_report.png)
+
 ## Getting started
 
 http://caiomts.github.io/timerdo/#getting-started

@@ -1,7 +1,6 @@
 # `timerdo`
 
-Timerdo is a minimalist to-do list with built-in timer
-to keep your tasks on track.
+Timerdo is a minimalist to-do list with built-in timer to keep your tasks on track.
 
 **Usage**:
 
@@ -11,6 +10,7 @@ $ timerdo [OPTIONS] COMMAND [ARGS]...
 
 **Options**:
 
+* `-v, --version`: Print version.
 * `--install-completion`: Install completion for the current shell.
 * `--show-completion`: Show completion for the current shell, to copy it or customize the installation.
 * `--help`: Show this message and exit.
@@ -19,7 +19,8 @@ $ timerdo [OPTIONS] COMMAND [ARGS]...
 
 * `delete`: Delete item, given table and item id.
 * `edit`: Edit task or timer entries.
-* `query`: Query the data.
+* `query`: Query the data with sql script and return...
+* `report`: Print reports.
 * `start`: Start timer.
 * `stop`: Stop running timer.
 * `task`: Add a task to the To-Do list.
@@ -106,47 +107,40 @@ $ timerdo edit timer [OPTIONS] ID
 
 ## `timerdo query`
 
-Query the data.
+Query the data with sql script and return a json.
 
 **Usage**:
 
 ```console
-$ timerdo query [OPTIONS] COMMAND [ARGS]...
+$ timerdo query [OPTIONS] SCRIPT
 ```
+
+**Arguments**:
+
+* `SCRIPT`: sql script.  [required]
 
 **Options**:
 
 * `--help`: Show this message and exit.
 
-**Commands**:
+## `timerdo report`
 
-* `sql`: Query the data with sql.
-
-### `timerdo query sql`
-
-Query the data with sql.
+Print reports.
 
 **Usage**:
 
 ```console
-$ timerdo query sql [OPTIONS] [SQL]
+$ timerdo report [OPTIONS]
 ```
-
-**Arguments**:
-
-* `[SQL]`: Item id.  [default: 
-        SELECT td.id, task, tag, deadline, status, sum(
-            strftime('%M', finished_at) - strftime('%M', tl.created_at)
-            ) as time
-        FROM todo_list as td
-        LEFT OUTER JOIN timer_list as tl
-        ON tl.task_id = td.id
-        GROUP BY td.id, task, tag, deadline, status
-        ORDER BY deadline ASC
-        ]
 
 **Options**:
 
+* `-d, --done`: Return also tasks with Done status.
+* `-t, --tags TEXT`: Filter tags.
+* `-i, --init [%Y-%m-%d]`: Timeframe's lower boundary.
+* `-e, --end [%Y-%m-%d]`: Timeframe's upper boundary.
+* `-o, --order-by TEXT`: Column to order by.
+* `-a, --asc`: If ordered by it will be in ascending order.
 * `--help`: Show this message and exit.
 
 ## `timerdo start`
@@ -179,6 +173,7 @@ $ timerdo stop [OPTIONS]
 
 **Options**:
 
+* `-d, --done`: Set the task to Done.  [required]
 * `--help`: Show this message and exit.
 
 ## `timerdo task`
@@ -197,7 +192,7 @@ $ timerdo task [OPTIONS] TASK
 
 **Options**:
 
-* `--tag TEXT`: Task tag.
+* `-t, --tag TEXT`: Task tag.
 * `-d, --deadline [%Y-%m-%d]`: Task Deadline.
 * `-s, --status [To Do|Doing|Done]`: Task Status.  [default: To Do]
 * `--help`: Show this message and exit.

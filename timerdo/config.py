@@ -11,7 +11,7 @@ def get_user_dir(dir_data: bool = True) -> Path:
         case 'Windows', '':
             if os.getenv('APPDATA'):
                 return Path(os.getenv('APPDATA'))
-            else:
+            else: 
                 return Path(os.getenv('LOCALAPPDATA'))
         case 'Darwin', '':
             return Path(home, 'Library')
@@ -28,4 +28,4 @@ data_dir = get_user_dir() / 'Timerdo'
 config_dir = get_user_dir(dir_data=False)
 
 data_dir.mkdir(parents=True, exist_ok=True)
-config_dir.mkdir(parents=True, exist_ok=True)
+config_dir.mkdir(parents=True, exist_ok=True)  # On hold. Might be useful.

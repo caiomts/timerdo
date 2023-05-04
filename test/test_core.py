@@ -45,8 +45,9 @@ def test_connection_execute(tconnection, add_task):
 
 
 def test_add_task_without_task(tconnection):
-    with pytest.raises(TypeError):
+    with pytest.raises(SystemExit) as e:
         add_task(session=tconnection)
+        assert e.value.code == 1
 
 
 def test_add_task(tconnection, fake_todo_item):
@@ -62,8 +63,9 @@ def test_add_task(tconnection, fake_todo_item):
 
 
 def test_add_timer_attribute_error(tconnection):
-    with pytest.raises(IdNotFoundError):
+    with pytest.raises(SystemExit) as e:
         add_timer(1, session=tconnection)
+        assert e.value.code == 1
 
 
 def test_add_timer(tconnection, add_task):
@@ -72,17 +74,19 @@ def test_add_timer(tconnection, add_task):
 
 
 def test_add_timer_done_task(tconnection, done_task):
-    with pytest.raises(DoneTaskError):
+    with pytest.raises(SystemExit) as e:
         add_timer(1, session=tconnection)
+        assert e.value.code == 1
 
 
 def test_add_timer_running_timer(tconnection, running_timer):
-    with pytest.raises(RunningTimerError):
+    with pytest.raises(SystemExit) as e:
         add_timer(1, session=tconnection)
+        assert e.value.code == 1
 
 
 def test_finish_timer(tconnection, running_timer):
-    finish_timer(session=tconnection)
+    finish_timer(done=False, session=tconnection)
     assert (
         tconnection.execute(
             text('SELECT * FROM timer_list WHERE finished_at = NULL')
@@ -92,8 +96,9 @@ def test_finish_timer(tconnection, running_timer):
 
 
 def test_finish_timer_no_running(tconnection):
-    with pytest.raises(NoTimeRunningError):
-        finish_timer(session=tconnection)
+    with pytest.raises(SystemExit) as e:
+        finish_timer(done=True, session=tconnection)
+        assert e.value.code == 1
 
 
 def test_delete_item(tconnection, add_task):
@@ -102,14 +107,15 @@ def test_delete_item(tconnection, add_task):
 
 
 def test_delete_item_wrong_id(tconnection):
-    with pytest.raises(IdNotFoundError):
+    with pytest.raises(SystemExit) as e:
         delete_item(1, ToDoItem, tconnection)
+        assert e.value.code == 1
 
 
 def test_edit_todo_item_wrong_id(tconnection):
-    with pytest.raises(IdNotFoundError):
+    with pytest.raises(SystemExit) as e:
         edit_todo_item(1, session=tconnection)
-
+        assert e.value.code == 1
 
 def test_edit_todo_item(tconnection, add_task):
     fake = Faker()
@@ -134,7 +140,7 @@ def test_edit_todo_item(tconnection, add_task):
 
 
 def test_edit_timer(tconnection, running_timer):
-    finish_timer(session=tconnection)
+    finish_timer(done=False, session=tconnection)
 
     now = datetime.now()
     finished_at = now
@@ -149,18 +155,19 @@ def test_edit_timer(tconnection, running_timer):
 
 
 def test_edit_timer_running_timer(tconnection, running_timer):
-    with pytest.raises(RunningTimerError):
+    with pytest.raises(SystemExit) as e:
         edit_timer_item(1, session=tconnection)
-
+        assert e.value.code == 1
 
 def test_edit_timer_no_change_timer(tconnection, running_timer):
-    finish_timer(session=tconnection)
-    with pytest.raises(NoChangingError):
+    finish_timer(done=False, session=tconnection)
+    with pytest.raises(SystemExit) as e:
         edit_timer_item(1, session=tconnection)
+        assert e.value.code == 1
 
 
 def test_edit_timer_no_created_at(tconnection, running_timer):
-    finish_timer(session=tconnection)
+    finish_timer(done=False, session=tconnection)
 
     diff = datetime.utcnow() - datetime.now()
     finished_at = datetime.now()
@@ -175,7 +182,7 @@ def test_edit_timer_no_created_at(tconnection, running_timer):
 
 
 def test_edit_timer_no_finished_at(tconnection, running_timer):
-    finish_timer(session=tconnection)
+    finish_timer(done=False, session=tconnection)
 
     diff = datetime.utcnow() - datetime.now()
     created_at = datetime.now() - timedelta(hours=1)
@@ -190,28 +197,33 @@ def test_edit_timer_no_finished_at(tconnection, running_timer):
 
 
 def test_edit_timer_created_gt_finished(tconnection, running_timer):
-    with pytest.raises(NegativeIntervalError):
-        finish_timer(session=tconnection)
+    with pytest.raises(SystemExit) as e:
+        finish_timer(done=False, session=tconnection)
 
         created_at = datetime.now() + timedelta(hours=1)
 
         edit_timer_item(1, created_at=created_at, session=tconnection)
+        assert e.value.code == 1
 
 
 def test_edit_timer_no_finished_gt_now(tconnection, running_timer):
-    with pytest.raises(OutOffPeriodError):
-        finish_timer(session=tconnection)
+    with pytest.raises(SystemExit) as e:
+        finish_timer(done=False, session=tconnection)
 
         finished_at = datetime.now() + timedelta(hours=1)
 
         edit_timer_item(1, finished_at=finished_at, session=tconnection)
+        assert e.value.code == 1
 
 
 def test_edit_timer_wrong_id(tconnection):
-    with pytest.raises(IdNotFoundError):
+    with pytest.raises(SystemExit) as e:
         edit_timer_item(2, finished_at=datetime.now(), session=tconnection)
+        assert e.value.code == 1
 
 
 def test_select_all(tconnection, running_timer):
     item = tconnection.get_id(ToDoItem, 1)
-    assert query_with_text(session=tconnection)[0][1] == item.task
+    script = """SELECT * FROM todo_list"""
+    result = query_with_text(script, session=tconnection)
+    assert '{' in result

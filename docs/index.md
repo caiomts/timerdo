@@ -6,6 +6,7 @@ A minimalist to-do list with built-in timer to keep your tasks on track.
 
 Timerdo is an intuitive CLI application that will help you focus on what really matters.
 
+
 ---
 ## Requirements
 
@@ -19,138 +20,35 @@ No fear of the command-line interface :laughing:.
 
 **Documentation:** http://caiomts.github.io/timerdo
 
-:warning: Early stage project[^2]
+:warning: Early stage project[^1]
 
 ---
 
-## Getting started
-Timerdo is a CLI application 100% written in Python. So, if you're a Python user, you can easily install Timerdo with `pip[x]`.
+??? note "UNLICENSE"
+    This is free and unencumbered software released into the public domain.
 
-### Install Timerdo
+    Anyone is free to copy, modify, publish, use, compile, sell, or
+    distribute this software, either in source code form or as a compiled
+    binary, for any purpose, commercial or non-commercial, and by any
+    means.
 
-#### with pipx <small>recommended</small>
+    In jurisdictions that recognize copyright laws, the author or authors
+    of this software dedicate any and all copyright interest in the
+    software to the public domain. We make this dedication for the benefit
+    of the public at large and to the detriment of our heirs and
+    successors. We intend this dedication to be an overt act of
+    relinquishment in perpetuity of all present and future rights to this
+    software under copyright law.
 
-```shell
-$ pipx install timerdo
-```
+    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+    EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+    MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+    IN NO EVENT SHALL THE AUTHORS BE LIABLE FOR ANY CLAIM, DAMAGES OR
+    OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
+    ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+    OTHER DEALINGS IN THE SOFTWARE.
 
-If you've never used [pipx][^1] before, do yourself a favor and just install it :teacher:. 
-
-#### with pip
-
-```shell
-$ pip install timerdo
-```
-
-If you already tried [pipx] but somehow don't like it you can 
-stick with the classic `pip install`.
-
-#### verifying your installation
-
-```shell hl_lines="2"
-$ timerdo
-timerdo Version: 0.0.3
-```
-
-If your output is similar to the one highlighted above, you're good :rocket:.
-
-### Adding your first task
-
-```shell
-$ timerdo task "<your task goes here>"
-```
-No return. No problem.
-
-### Starting the timer
-
-```shell
-$ timerdo start <your task id>
-```
-No return. No problem.
-
-### Stopping the timer
-
-```shell
-$ timerdo stop
-```
-No return. you already know...
-
-### Getting task IDs
-
-```shell
-$ timerdo query sql
-[
-    (3, 'Team Eight Group Receive Even Option Investment.', None, None, 'To Do', None),
-    (4 'Clearly Whom Win Go Score World.', None, None, 'To Do', None),
-    (5, 'Hand Style Manager Strong Enter Lot Federal Individual.', None, None, 'To Do', 
-None),
-    (6, 'Action Society Whose Sport Tv Over West.', None, None, 'Doing', 6),
-    (7, 'Pressure Character Plan Almost Watch Compare Record.', None, None, 'Doing', 0),
-    (8, 'Stage Require Mind Way Sit Ahead Watch Ten.', None, None, 'To Do', None),
-    (9, 'Fall Administration Moment.', None, None, 'To Do', None),
-    (1, 'Team Eight Group Receive Even Option Investment.', 'Moon', '2023-03-01', 'Doing', 1),
-    (2, 'Action Society Whose Sport Tv Over West.', None, '2023-03-02', 'To Do', None)
-]
-
-```
-
-??? warning "Under construction :factory_worker:" 
-    Up to this point you have a query with all your tasks and the minutes you spent in each one of them.
-
-    These are the planned steps:
-
-    - [x] Core function to query database using text (SQLite queries).
-    - [x] CLI function to [rich](https://rich.readthedocs.io/en/latest/)-print query results.
-        * [ ] Print tables as result.
-    - [ ] Create config file where users can create and persist
-    their own queries.
-    - [ ] Create class to handle queries and generate tables to print.
-
-!!! example
-    | id | task | tag | deadline | status | Time (min)|
-    |:--:|:----:|:---:|:--------:|:------:|:---------:|
-    |1|Team Eight Group Receive Even Option Investment|Moon|2023-03-01|Doing|1|
+    For more information, please refer to <http://unlicense.org/>
 
 
-## Next steps
-
-If you already have your Timerdo installed and are wondering how to do things, 
-I have two suggestions.
-
-1. Go directly to the [CLI reference](cli_reference.md) section.
-
-2. Call for --Help :laughing:
-
-```shell
-$ timerdo --help
-                                                                       
- Usage: timerdo [OPTIONS] COMMAND [ARGS]...                            
-                                                                       
- Timerdo is a minimalist to-do list with built-in timer to keep your   
- tasks on track.                                                       
-                                                                       
-╭─ Options ───────────────────────────────────────────────────────────╮
-│ --install-completion          Install completion for the current    │
-│                               shell.                                │
-│ --show-completion             Show completion for the current       │
-│                               shell, to copy it or customize the    │
-│                               installation.                         │
-│ --help                        Show this message and exit.           │
-╰─────────────────────────────────────────────────────────────────────╯
-╭─ Commands ──────────────────────────────────────────────────────────╮
-│ delete      Delete item, given table and item id.                   │
-│ edit        Edit task or timer entries.                             │
-│ query       Query the data.                                         │
-│ start       Start timer.                                            │
-│ stop        Stop running timer.                                     │
-│ task        Add a task to the To-Do list.                           │
-╰─────────────────────────────────────────────────────────────────────╯
-
-```
-
-[tutorial]:tutorials.md
-[pipx]:https://pypa.github.io/pipx/
-[^1]: Pipx installs CLI apps in isolated environments and exposes the
-entry points to your `PATH` so you can call them directly with no concerns
-if you are in the right python env or not, without dependency conflicts and clean uninstalls :sweat_smile:.
-[^2]: Data models are mostly stable, but visualization and queries are in full development and the API can change quickly.
+[^1]: Data models are mostly stable, but visualization and queries are in full development and the API can change quickly.

@@ -4,8 +4,14 @@ repo_name: caiomts/timerdo
 edit_uri: edit/master/docs/
 
 nav:
-  - Home: 
+  - "Home": 
       - index.md
+      - install.md
+  - "Getting Started":
+    - start.md
+  - "Tutorial - User Guide":
+    - tutorial_1.md
+    - tutorial_2.md
   - "CLI Reference":
       - cli_reference.md
 
@@ -42,6 +48,7 @@ theme:
     - navigation.footer
     - content.action.edit
     - content.action.view
+    - navigation.indexes
 
 markdown_extensions:
   - attr_list

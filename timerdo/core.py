@@ -1,7 +1,15 @@
+import sys
+import json
 from datetime import date, datetime
+from itertools import chain
 from string import capwords
 from typing import NoReturn
 
+import numpy as np
+import pandas as pd
+from rich import box, print
+from rich.console import Console
+from rich.table import Table
 from sqlalchemy import select, text
 from sqlalchemy.orm import Session
 from sqlalchemy.orm.exc import NoResultFound, UnmappedInstanceError
@@ -21,6 +29,20 @@ from .models import Status, Timer, ToDoItem
 connection = Connection(engine)
 
 
+def exception_handler(func):
+    """Handle exceptions with a prittyprint."""
+    def wrapper(*args, **kwargs):
+        """Wrapper decorated function."""
+        try:
+            result = func(*args, **kwargs)
+        except Exception as ex:
+            print(f"[bold red]:boom-emoji: {ex}[/bold red]")
+            sys.exit(1)
+        return result
+    return wrapper
+
+
+@exception_handler
 def add_task(
     task: str,
     tag: str | None = None,
@@ -53,6 +75,7 @@ def add_task(
     return session.add(new_task)
 
 
+@exception_handler
 def add_timer(task_id: int, session: Session = connection) -> NoReturn:
     """Add a new timer to the timer_list table.
 
@@ -82,7 +105,8 @@ def add_timer(task_id: int, session: Session = connection) -> NoReturn:
         raise IdNotFoundError(f"Task {task_id} does not exist.")
 
 
-def finish_timer(session: Session = connection) -> NoReturn:
+@exception_handler
+def finish_timer(done: bool, session: Session = connection) -> NoReturn:
     """Add `finished_at` to the last timer_list table row when it is `None`.
 
     Args:
@@ -98,6 +122,12 @@ def finish_timer(session: Session = connection) -> NoReturn:
 
         timer = session.get_id(Timer, timer.id)
         timer.finished_at = datetime.utcnow()
+        
+        if done is True:
+            task_id = timer.task_id
+            item = session.get_id(ToDoItem, task_id)
+            item.status = Status.done
+            session.add(item)
 
         return session.add(timer)
 
@@ -105,6 +135,7 @@ def finish_timer(session: Session = connection) -> NoReturn:
         raise NoTimeRunningError("No timer running.")
 
 
+@exception_handler
 def delete_item(
     id: int, model: ToDoItem | Timer, session: Session = connection
 ) -> NoReturn:
@@ -127,6 +158,7 @@ def delete_item(
         )
 
 
+@exception_handler
 def edit_todo_item(
     id: int,
     task: str | None = None,
@@ -166,6 +198,7 @@ def edit_todo_item(
         raise IdNotFoundError(f"Item {id} does not exist.")
 
 
+@exception_handler
 def edit_timer_item(
     id: int,
     created_at: datetime | None = None,
@@ -220,8 +253,168 @@ def edit_timer_item(
         raise IdNotFoundError(f"Item {id} does not exist.")
 
 
-def query_with_text(
-    qtext: str = 'SELECT * FROM todo_list', session: Connection = connection
-) -> list:
-    """Query the data."""
-    return session.execute(text(qtext)).all()
+@exception_handler
+def query_with_text(script: str, session: Connection = connection) -> list:
+    """Execute a sql script and return a json.
+
+    Args:
+        script (str): sql script to be executed.
+        session (Connection): Connection object.
+
+    Returns:
+        str
+    """
+    query = [dict(row._mapping) for row in session.execute(text(script)).all()]
+
+    return json.dumps(
+        {
+            k: [d[k] for d in query if k in d]
+            for k in set(chain(*[x.keys() for x in query]))
+        }
+    )
+
+
+@exception_handler
+def list_tasks_with_time(
+    status: bool = False,
+    tags: list[str] | None = None,
+    init: datetime | None = None,
+    end: datetime | None = None,
+    order_by: str | None = None,
+    asc: bool = False,
+    session: Connection = connection,
+) -> pd.DataFrame:
+    """List tasks with total time per task.
+
+    Args:
+        status (bool): whether print tasks with `Done` status.
+        tags (list[str] | None): list of tags to filter.
+        init (datetime | None): to set the lower timeframe limit `>=`.
+        end (datetime | None): to set the upper timeframe limit `<`.
+        order_by (str| None): to order by a given column name.
+        asc (bool): whether order in ascending order.
+        session (Connection): Connection object.
+
+    Returns:
+        pd.DataFrame
+    """
+    query_task = """SELECT
+        to_do.id,
+        to_do.task,
+        to_do.tag,
+        to_do.deadline,
+        to_do.created_at date,
+        to_do.status,
+        timer.created_at,
+        timer.finished_at
+    FROM
+        todo_list to_do
+    LEFT JOIN timer_list timer ON to_do.id = timer.task_id
+    """
+    df = pd.read_sql(query_task, session.engine)
+
+    if status is False:
+        df = df.query('status != "Done"')
+    if tags:
+        df = df.loc[df['tag'].isin(tags)]
+
+    df = df.assign(
+        date=pd.to_datetime(df['date']).astype('datetime64[s]').dt.date,
+        finished_at=pd.to_datetime(df['finished_at']),
+        created_at=pd.to_datetime(df['created_at']),
+        time=lambda df: (df['finished_at'] - df['created_at']).astype(
+            'timedelta64[s]'
+        ),
+    )
+
+    match init, end:
+        case datetime(), None:
+            df = df.loc[df['created_at'] >= init]
+        case None, datetime():
+            df = df.loc[df['created_at'] < end]
+        case datetime(), datetime():
+            if init >= end:
+                raise NegativeIntervalError(
+                    "created_at is greater than finished_at"
+                )
+            df = df.loc[(df['created_at'] < end) & (df['created_at'] >= init)]
+        case _:
+            pass
+
+    df = (
+        df.drop(columns=['created_at', 'finished_at'])
+        .fillna('')
+        .groupby(['id', 'date', 'task', 'tag', 'deadline', 'status'])
+        .sum()
+        .reset_index()
+    )
+
+    try:
+        df = df.sort_values(by=order_by, ascending=asc)
+    except KeyError:
+        df = df.sort_values(by='id', ascending=asc)
+
+    return df
+
+
+@exception_handler
+def print_report(
+    df: pd.DataFrame,
+    init: datetime | None,
+    end: datetime | None,
+) -> NoReturn:
+    """Print to do list as report per tag.
+
+    Args:
+        df (pd.DataFrame): Dataframe with to do list and time column.
+        init (datetime | None): to set the lower timeframe limit `>=`.
+        end (datetime | None): to set the upper timeframe limit `<`.
+
+    Returns:
+        NoReturn
+    """
+    console = Console()
+    if init is None:
+        init = datetime(1789, 7, 14)
+    if end is None:
+        end = datetime.now()
+
+    interval = f"\nfrom {str(init.date())} until {str(end.date())}\n"
+    console.print(interval, justify='right')
+
+    for tag in np.sort(df['tag'].unique()):
+        subset = df.query(f'tag == "{tag}"')
+        time = subset['time'].sum()
+        table = Table(
+            title=f":label-emoji:   {tag}   ---   {time}\n",
+            box=box.ROUNDED,
+            border_style='bold bright_black',
+            title_style='bold',
+        )
+
+        table.add_column(
+            "ID",
+            justify='right',
+            style='yellow',
+            no_wrap=True,
+            header_style='bold cyan',
+        )
+        table.add_column("Date", justify='right', style='cyan', no_wrap=True)
+        table.add_column("Task", justify='left', style='bright_magenta')
+        table.add_column(
+            "Deadline", justify='right', style='cyan', no_wrap=True
+        )
+        table.add_column("Status", justify='left', style='yellow')
+        table.add_column("Time", justify='center', style='cyan')
+
+        for row in range(subset.shape[0]):
+            table.add_row(
+                str(subset.iloc[row, 0]),
+                str(subset.iloc[row, 1]),
+                str(subset.iloc[row, 2]),
+                str(subset.iloc[row, 4]),
+                str(subset.iloc[row, 5]),
+                str(subset.iloc[row, 6]),
+            )
+
+        console.print(table, new_line_start=True)

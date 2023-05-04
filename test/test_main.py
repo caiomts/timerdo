@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from faker import Faker
 from typer.testing import CliRunner
 
@@ -13,7 +15,12 @@ def test_callback():
     result = runner.invoke(
         app,
     )
-    assert f'timerdo Version: {__version__}' in result.stdout
+    assert '╭─────' in result.stdout
+
+
+def test_version():
+    result = runner.invoke(app, ['--version'])
+    assert f'Timerdo version: {__version__}' in result.stdout
 
 
 def test_task():
@@ -37,7 +44,7 @@ def test_start():
 
 
 def test_stop():
-    result = runner.invoke(app, ['stop'])
+    result = runner.invoke(app, ['stop', '-d'])
     assert result.exit_code == 0
 
 
@@ -56,8 +63,8 @@ def test_edit_timer():
 
 
 def test_query_sql():
-    result = runner.invoke(app, ['query', 'sql'])
-    assert '[' in result.stdout
+    result = runner.invoke(app, ['query', 'SELECT * FROM todo_list'])
+    assert '{' in result.stdout
 
 
 def test_delete_timer():
@@ -70,5 +77,42 @@ def test_delete_task():
     assert result.exit_code == 0
 
 
+def test_report():
+    result = runner.invoke(
+        app, ['report', '--order-by', 'test', '--tags', 'test']
+        )
+    assert f'from 1789-07-14 until {datetime.now().date()}' in result.stdout
+
+
+def test_report_date():
+    result = runner.invoke(
+        app, ['report', '--init', '1988-10-10', '--end', '2022-10-10']
+        )
+    assert f'from 1988-10-10 until 2022-10-10' in result.stdout
+
+
+def test_report_date_init():
+    result = runner.invoke(
+        app, ['report', '--init', '1988-10-10']
+        )
+    assert f'from 1988-10-10 until {datetime.now().date()}' in result.stdout
+
+
+def test_report_date_end():
+    result = runner.invoke(
+        app, ['report', '--end', '1988-10-10']
+        )
+    assert f'from 1789-07-14 until 1988-10-10' in result.stdout
+
+
+def test_report_date_error():
+    result = runner.invoke(
+        app, ['report', '--end', '1400-10-10', '--init', '1988-10-10']
+        )
+    assert result.exit_code == 1
+
+
 def test_delete_test(delete_test):
     pass
+
+
