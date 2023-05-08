@@ -1,5 +1,5 @@
 
-# User Guide - CUD from CRUD
+# User Guide (CUD of CRUD Tasks) - Timer, Delete and Update
 
 CRUD is an acronym. They are the four basic operations for persistent storage[^1]
 
@@ -122,14 +122,14 @@ Let's try it out:
 ```shell
 $ timerdo task "my second task with options" --tag "user guide tag" -d 2023-05-10
 $ timerdo report
-    --/-- 
+    --/-- More things above --/--
 
 ╭────┬────────────┬─────────────────────────────┬────────────┬────────┬─────────────────╮
 │ ID │       Date │ Task                        │   Deadline │ Status │      Time       │
 ├────┼────────────┼─────────────────────────────┼────────────┼────────┼─────────────────┤
 │  3 │ 2023-05-04 │ My Second Task With Options │ 2023-05-10 │ To Do  │ 0 days 00:00:00 │
 
-    --/--
+    --/-- More things below --/--
 ```
 Here we used the `--deadline` shortcut (`-d`).
 
@@ -225,7 +225,7 @@ Flag is the same as calling an option with no variable. as simple as that.
 Until now you didn't make a mistake :clap:. But you know, humans make mistakes.
 Let's say your are human and made a miskate. The very first solution is to throw it away.
 
-To delete a entry you have to arguments `table` and `id`.
+To delete a entry you have 2 arguments `table` and `id`.
 
 `table` are: `[task|timer]`. It works in the same way of `status`. `id` you already know.
 Each table has its own ids.
@@ -233,15 +233,15 @@ Each table has its own ids.
 ```shell
 $ timerdo delete timer 1
 $ timerdo report
-    --/--                                                                    
+    --/-- More things above --/--                                            
 ╭────┬────────────┬───────────────────────┬──────────┬────────┬─────────────────╮
 │ ID │       Date │ Task                  │ Deadline │ Status │      Time       │
 ├────┼────────────┼───────────────────────┼──────────┼────────┼─────────────────┤
 │  1 │ 2023-05-04 │ <your task goes here> │          │ Doing  │ 0 days 00:00:00 │
 ╰────┴────────────┴───────────────────────┴──────────┴────────┴─────────────────╯
-    --/--
+    --/-- More things below --/--
 ```
-!!! warning
+??? warning
     If you delete a task, all timers linked to that task will be deleted as well.
 
 Sometimes everything is almost correctly and you don't want to delete everything.
@@ -257,7 +257,16 @@ The next topic will show you how to update your data.
 
     These are the planned steps:
 
-    - [ ] Create two simple reports with full table. One for each table.
+    **Reports**
+
+    - [ ] Create one simple timer reports with period filter.
+    - [ ] Create one simple task report with period filter.
+    - [ ] Create a CLI entry point to call both functions from one subcommand (like edit or delete).
+    
+    **Delete**
+    
+    - [ ] Update delete function to delete batches by *tag*.
+    - [ ] Update delete function to delete by *creation* period.
 
 
 ## Update

@@ -136,7 +136,7 @@ $ timerdo report [OPTIONS]
 **Options**:
 
 * `-d, --done`: Return also tasks with Done status.
-* `-t, --tags TEXT`: Filter tags.
+* `-t, --tag TEXT`: Filter tags.
 * `-i, --init [%Y-%m-%d]`: Timeframe's lower boundary.
 * `-e, --end [%Y-%m-%d]`: Timeframe's upper boundary.
 * `-o, --order-by TEXT`: Column to order by.

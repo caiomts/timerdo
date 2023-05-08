@@ -112,8 +112,8 @@ def report_tasks(
     status: bool = typer.Option(
         False, "--done", "-d", help="Return also tasks with Done status."
     ),
-    tags: Optional[list[str]] = typer.Option(
-        None, "--tags", "-t", help="Filter tags."
+    tag: Optional[list[str]] = typer.Option(
+        None, "--tag", "-t", help="Filter tags."
     ),
     init: Optional[datetime] = typer.Option(
         None,
@@ -143,7 +143,7 @@ def report_tasks(
     print_report(
         list_tasks_with_time(
             status=status,
-            tags=tags,
+            tags=tag,
             init=init,
             end=end,
             order_by=order_by,

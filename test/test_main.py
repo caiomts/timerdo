@@ -79,7 +79,7 @@ def test_delete_task():
 
 def test_report():
     result = runner.invoke(
-        app, ['report', '--order-by', 'test', '--tags', 'test']
+        app, ['report', '--order-by', 'test', '--tag', 'test']
     )
     assert f'from 1789-07-14 until {datetime.now().date()}' in result.stdout
 
