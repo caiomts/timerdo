@@ -41,22 +41,17 @@ No fear of the command-line interface :laughing:.
 
 ![timerdo_report](docs/img/screenshot_timerdo_report.png)
 
+## Installing Timerdo
+
+https://caiomts.github.io/timerdo/install/
+
 ## Getting started
 
-http://caiomts.github.io/timerdo/#getting-started
+https://caiomts.github.io/timerdo/start/
 
 ## CLI Reference
 
-http://caiomts.github.io/timerdo/#CLI-Reference
-
-## API Reference
-
-http://caiomts.github.io/timerdo/#API-Reference
-
-## Releases
-
-http://caiomts.github.io/timerdo/#Releases
-
+https://caiomts.github.io/timerdo/cli_reference/
 
 
 [^2]: Data models are mostly stable, but visualization and queries are in full development and the API can change quickly.
